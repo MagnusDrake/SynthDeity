@@ -1,4 +1,4 @@
-// Game Constants, World Lore, Projects, and Skills Data for AETHELGARD
+// Game Constants, World Lore, Projects, and Skills Data for SYNTHDEITY: LOOP FABRICATION
 
 export const SHRINES = {
   GENESIS: {
@@ -183,58 +183,196 @@ export const CELESTIAL_REALMS = {
   }
 };
 
-export const ASTRAL_OBELISKS = {
+export const ARCHON_REALMS = {
   TITAN: {
     id: 'obelisk_titan',
+    realmId: 'titan',
     name: "The Titan's Inscription",
+    archonName: "Valdor, Archon of Ruin",
     region: 'Shattered Titan Shelf',
     position: { x: 195, y: 32, z: -210 },
-    color: 0xf59e0b,
+    color: 0xf59e0b, // Amber Gold
     icon: '⚔️',
     lore: {
-      title: 'Remnant of the First Sovereign',
-      description: 'Before digital space was partitioned into bytes and memory addresses, the Colossal Titans forged the foundational laws of compute. This monolithic slab bears the ancient assembly code of creation itself.',
+      title: 'Archon of Foundational Ruin',
+      archon: 'Valdor the First Sovereign',
+      description: 'Before memory was partitioned and clock cycles aligned, Valdor sculpted tectonic hardware out of molten starlight. When the Great Crash occurred, his blade shattered the celestial shelf, leaving the raw assembly code of the cosmos etched into stone.',
       revelation: 'Divine Knowledge Unlocked: Architect of the Void'
+    },
+    trial: {
+      id: 'trial_titan',
+      name: 'Trial of Ruin',
+      type: 'smite_combat',
+      targetCount: 4,
+      duration: 30,
+      title: 'Purge the Void Rifts',
+      objective: 'Destroy 4 floating Void Rifts using Divine Smite [LMB / E]',
+      hint: 'Target the swirling dark anomalies above the broken arch and strike them down with solar beams.'
+    },
+    power: {
+      id: 'meteor',
+      slot: 1,
+      key: '1',
+      name: 'Meteor Tremor',
+      icon: '☄️',
+      color: '#f59e0b',
+      cooldown: 4.5,
+      description: 'Summons a deluge of blazing celestial meteors slamming into the reticle, unleashing concussive shockwaves and seismic fractures.'
+    },
+    bridge: {
+      color: 0xf59e0b,
+      glowColor: 0xfde68a,
+      label: 'Solar Ley-Line Bridge'
+    },
+    stargate: {
+      name: 'The Cyber Matrix',
+      theme: 'matrix',
+      color: 0xf59e0b,
+      description: 'A retro-futuristic wireframe realm where raw mathematical algorithms drift through infinite green and amber neon grids.'
     }
   },
   CRYSTAL: {
     id: 'obelisk_crystal',
+    realmId: 'crystal',
     name: 'The Heart of Aether',
+    archonName: "Lyra, Archon of Resonance",
     region: 'Luminescent Crystal Crags',
     position: { x: -230, y: -12, z: 195 },
-    color: 0xc084fc,
+    color: 0xc084fc, // Amethyst Purple
     icon: '💎',
     lore: {
-      title: 'Crystalline Resonator',
-      description: 'Formed from condensed quantum starlight, these singing amethyst formations resonate at harmonic frequencies that restore celestial energy to weary digital wanderers.',
+      title: 'Archon of Harmonic Memory',
+      archon: 'Lyra the Resonant Songstress',
+      description: 'Born from condensed quantum starlight, Lyra sang the harmonic frequencies that prevent digital space from decaying into noise. Her heart remains embedded in the singing amethyst caverns, vibrating at the fundamental frequency of reality.',
       revelation: 'Divine Knowledge Unlocked: Harmonic Resonance'
+    },
+    trial: {
+      id: 'trial_crystal',
+      name: 'Trial of Resonance',
+      type: 'flight_slalom',
+      targetCount: 5,
+      duration: 40,
+      title: 'Harmonic Flight Slalom',
+      objective: 'Fly through 5 glowing Harmonic Rings in sequence before the resonance decays [WASD + Space]',
+      hint: 'Engage flight [F] and steer through each pulsating aether ring across the crags.'
+    },
+    power: {
+      id: 'graviton',
+      slot: 2,
+      key: '2',
+      name: 'Graviton Pulse',
+      icon: '🔮',
+      color: '#c084fc',
+      cooldown: 3.5,
+      description: 'Discharges an ultrasonic gravitational shockwave that pulls cosmic stardust motes inward and blasts away physical obstacles.'
+    },
+    bridge: {
+      color: 0xc084fc,
+      glowColor: 0xf3e8ff,
+      label: 'Amethyst Ley-Line Bridge'
+    },
+    stargate: {
+      name: 'The Asteroid Nebula',
+      theme: 'nebula',
+      color: 0xc084fc,
+      description: 'A zero-gravity asteroid field deep in interstellar space, glittering with floating crystalline geodes and planetary dust.'
     }
   },
   CHRONOS: {
     id: 'obelisk_chronos',
+    realmId: 'chronos',
     name: 'The Spire of Timelessness',
+    archonName: "Chronos, Archon of Cycles",
     region: 'Celestial Cloud Spires',
     position: { x: 235, y: 52, z: 215 },
-    color: 0x38bdf8,
+    color: 0x38bdf8, // Celestial Cyan
     icon: '⏳',
     lore: {
-      title: 'Anchor of Eternity',
-      description: 'Piercing the upper astral troposphere, this spire bends time. Here, milliseconds expand into infinite cycles, granting instantaneous execution across all parallel realities.',
+      title: 'Archon of Infinite Loops',
+      archon: 'Chronos the Clockwork Sovereign',
+      description: 'Chronos designed the cosmic game loop: tick, render, synchronize. His spires anchor eternity, stretching sub-milliseconds into infinite realities so the deity may perceive every frame of existence in crisp clarity.',
       revelation: 'Divine Knowledge Unlocked: Temporal Mastery'
+    },
+    trial: {
+      id: 'trial_chronos',
+      name: 'Trial of Chronokinesis',
+      type: 'time_alignment',
+      targetCount: 1,
+      duration: 45,
+      title: 'Align the Cosmic Astrolabe',
+      objective: 'Use Time Warp [T] to synchronize celestial time with the Eclipse Epoch, then interact with the Chronos Gear',
+      hint: 'Tap [T] until the sky turns into the violet Nebula Eclipse, aligning the rotating crown rings.'
+    },
+    power: {
+      id: 'blink',
+      slot: 3,
+      key: '3',
+      name: 'Astral Dash',
+      icon: '⚡',
+      color: '#38bdf8',
+      cooldown: 2.0,
+      description: 'Instantaneous sub-light warp blink 35 meters forward, shearing through dimensional fabric with a radiant prismatic trail.'
+    },
+    bridge: {
+      color: 0x38bdf8,
+      glowColor: 0xe0f2fe,
+      label: 'Cyan Ley-Line Bridge'
+    },
+    stargate: {
+      name: 'The Chronal Atrium',
+      theme: 'chronos',
+      color: 0x38bdf8,
+      description: 'A surreal realm of floating monumental clockwork dials, pendulum gears, and time-dilated crystal chambers.'
     }
   },
   ABYSS: {
     id: 'obelisk_abyss',
+    realmId: 'abyss',
     name: 'The Echo of Primordial Void',
+    archonName: "Moros, Archon of Oblivion",
     region: 'Abyssal Cascades',
     position: { x: -215, y: -38, z: -195 },
-    color: 0x10b981,
+    color: 0x10b981, // Emerald Void
     icon: '🌀',
     lore: {
-      title: 'The Silent Singularity',
-      description: 'A miniature stellar vortex slowly drawing stray starlight into quiet rest. It reminds all ascended beings that every creation begins and concludes in pure stillness.',
+      title: 'Archon of the Silent Null',
+      archon: 'Moros the Unbound Singularity',
+      description: 'Keeper of the garbage collector and absolute stillness. Moros recycles collapsed stars and dead compute threads into pure primordial energy, ensuring the universe remains uncluttered and infinitely fertile.',
       revelation: 'Divine Knowledge Unlocked: Primordial Equanimity'
+    },
+    trial: {
+      id: 'trial_abyss',
+      name: 'Trial of the Singularity',
+      type: 'singularity_containment',
+      targetCount: 3,
+      duration: 45,
+      title: 'Stabilize the Event Horizon',
+      objective: 'Collect 3 swirling Antimatter Glyphs while resisting the black hole gravitational vortex [WASD / Flight]',
+      hint: 'Fly or sprint around the accretion disk, retrieve the glowing green glyphs, and return them to the core.'
+    },
+    power: {
+      id: 'singularity',
+      slot: 4,
+      key: '4',
+      name: 'Singularity Vortex',
+      icon: '🌌',
+      color: '#10b981',
+      cooldown: 5.5,
+      description: 'Unleashes a micro-black hole at the reticle that bends light, sucks nearby particles into its event horizon, and detonates in an emerald nova.'
+    },
+    bridge: {
+      color: 0x10b981,
+      glowColor: 0xd1fae5,
+      label: 'Emerald Ley-Line Bridge'
+    },
+    stargate: {
+      name: 'The Event Horizon',
+      theme: 'singularity',
+      color: 0x10b981,
+      description: 'An ethereal chamber situated at the edge of a colossal black hole, surrounded by a blinding gravitational lensing ring.'
     }
   }
 };
+
+export const ASTRAL_OBELISKS = ARCHON_REALMS;
 

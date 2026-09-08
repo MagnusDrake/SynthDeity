@@ -1,7 +1,7 @@
 {
-  "name": "aethelgard",
-  "version": "1.0.0",
-  "description": "AETHELGARD: Sanctuary of the Digital Deity — An interactive 3D celestial web experience built with Three.js, PBR graphics, custom GLSL post-processing, and procedural Web Audio.",
+  "name": "synthdeity-loop-fabrication",
+  "version": "1.1.0",
+  "description": "SynthDeity: Loop Fabrication — An interactive 3D procedural cosmic videogame where you manifest as a digital deity fabricating realities, commanding celestial powers, and weaving an interconnected galaxy.",
   "private": true,
   "type": "module",
   "scripts": {

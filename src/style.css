@@ -383,6 +383,76 @@ body, html {
   box-shadow: 0 0 14px rgba(239, 68, 68, 0.6);
 }
 
+/* Divine Power Buttons */
+.power-btn {
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.power-btn.locked {
+  opacity: 0.55;
+  filter: grayscale(0.85);
+  border-color: rgba(100, 116, 139, 0.4);
+}
+
+.power-btn.locked:hover {
+  transform: none;
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+.lock-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 10px;
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: 50%;
+  padding: 1px 3px;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.power-btn.unlocked {
+  opacity: 1;
+  filter: none;
+}
+
+#power-meteor.unlocked {
+  border-color: rgba(245, 158, 11, 0.8);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);
+}
+#power-meteor.unlocked:hover {
+  background: rgba(245, 158, 11, 0.2);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.7);
+}
+
+#power-graviton.unlocked {
+  border-color: rgba(192, 132, 252, 0.8);
+  box-shadow: 0 0 14px rgba(192, 132, 252, 0.4);
+}
+#power-graviton.unlocked:hover {
+  background: rgba(192, 132, 252, 0.2);
+  box-shadow: 0 0 20px rgba(192, 132, 252, 0.7);
+}
+
+#power-blink.unlocked {
+  border-color: rgba(56, 189, 248, 0.8);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+}
+#power-blink.unlocked:hover {
+  background: rgba(56, 189, 248, 0.2);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.7);
+}
+
+#power-singularity.unlocked {
+  border-color: rgba(16, 185, 129, 0.8);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
+}
+#power-singularity.unlocked:hover {
+  background: rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.7);
+}
+
 /* Modals */
 .modal-backdrop {
   position: fixed;

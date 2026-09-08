@@ -433,8 +433,9 @@ export class CelestialPlayer {
       }
     }
 
-    // Keep within The Astral Expanse cosmic boundary (radius: 560m)
-    const maxRadius = 560;
+    // Keep within The Astral Expanse cosmic boundary (560m overworld, 2400m for sub-realms)
+    const isSubRealm = Math.abs(this.position.x) > 700 || Math.abs(this.position.z) > 700;
+    const maxRadius = isSubRealm ? 2400 : 560;
     const distFromOrigin = Math.sqrt(this.position.x * this.position.x + this.position.z * this.position.z);
     if (distFromOrigin > maxRadius) {
       const angle = Math.atan2(this.position.z, this.position.x);
@@ -480,8 +481,29 @@ export class CelestialPlayer {
     this.updateParticles(delta, true);
   }
 
-  // Determines ground elevation for sanctuary and open world expanse islands
+  // Determines ground elevation for sanctuary, open world expanse islands, and ley-line light bridges
   getFloorHeight(x, z) {
+    // 0. Check Luminous Ley-Line Walkway Bridges
+    if (this.vfx && this.vfx.leyLineWalkways) {
+      for (let i = 0; i < this.vfx.leyLineWalkways.length; i++) {
+        const w = this.vfx.leyLineWalkways[i];
+        const dx = x - w.start.x;
+        const dz = z - w.start.z;
+        const lx = w.end.x - w.start.x;
+        const lz = w.end.z - w.start.z;
+        const lenSq = lx * lx + lz * lz;
+        if (lenSq > 0) {
+          const t = Math.max(0, Math.min(1, (dx * lx + dz * lz) / lenSq));
+          const projX = w.start.x + t * lx;
+          const projZ = w.start.z + t * lz;
+          const distToBridge = Math.hypot(x - projX, z - projZ);
+          if (distToBridge <= w.width * 0.5) {
+            return w.startY + t * (w.endY - w.startY);
+          }
+        }
+      }
+    }
+
     // 1. Check open world archipelagos first
     if (this.expanse) {
       const expFloor = this.expanse.getFloorHeight(x, z);

@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { audioSystem } from '../audio/synth.js';
+import { ARCHON_REALMS, CELESTIAL_REALMS } from '../game/constants.js';
 
 export class GameController {
   constructor(camera, player, citadel, vfx, hud, expanse = null) {
@@ -43,6 +44,13 @@ export class GameController {
     this.activeModal = null;
     this.attunedShrines = new Set();
 
+    // Act Progression & Galaxy State
+    this.act = 1; // 1: Divine Ascension, 2: The Archon Trials, 3: Galactic Sovereign
+    this.clearedTrials = new Set();
+    this.unlockedPowers = new Set(['smite', 'terraform']);
+    this.powerCooldowns = { meteor: 0, graviton: 0, blink: 0, singularity: 0 };
+    this.activeTrial = null;
+
     // Camera shake trauma state (0 to 1)
     this.shakeTrauma = 0;
     this.shakeSeed = Math.random() * 1000;
@@ -58,8 +66,8 @@ export class GameController {
       {
         pos: new THREE.Vector3(0, 52, 82),
         lookAt: new THREE.Vector3(0, 10, 0),
-        title: "SANCTUARY OF THE DIGITAL DEITY",
-        subtitle: "The Sacred Golden Citadel of Aethelgard",
+        title: "SANCTUARY OF THE SYNTHDEITY",
+        subtitle: "The Sacred Nexus of Loop Fabrication",
         duration: 9
       },
       {
@@ -73,14 +81,14 @@ export class GameController {
         pos: new THREE.Vector3(-110, 42, -90),
         lookAt: new THREE.Vector3(-140, 15, -120),
         title: "THE CRYSTAL CRAGS",
-        subtitle: "Floating Shards of Harmonic Resonant Quartz",
+        subtitle: "Domain of Lyra, Archon of Resonance",
         duration: 9
       },
       {
         pos: new THREE.Vector3(95, 48, 110),
         lookAt: new THREE.Vector3(130, 22, 140),
-        title: "THE TITAN'S REST",
-        subtitle: "Colossal Monoliths of the Pre-Cosmic Architects",
+        title: "THE SHATTERED TITAN SHELF",
+        subtitle: "Domain of Valdor, Archon of Ruin",
         duration: 9
       },
       {
@@ -102,7 +110,6 @@ export class GameController {
 
     // Mouse drag for camera orbit
     window.addEventListener('mousedown', (e) => {
-      // Don't drag if clicking UI interactive elements
       if (e.target.closest('#hud-container') && !e.target.classList.contains('drag-passthrough')) {
         return;
       }
@@ -200,16 +207,30 @@ export class GameController {
       case 'KeyH':
         if (this.hud) this.hud.toggleHelp();
         break;
+      // Divine Powers (Unlocked through Archon Trials)
       case 'Digit1':
-        this.teleportTo('genesis');
+        this.castMeteorTremor();
         break;
       case 'Digit2':
-        this.teleportTo('vault');
+        this.castGravitonPulse();
         break;
       case 'Digit3':
-        this.teleportTo('spire');
+        this.castAstralDash();
         break;
       case 'Digit4':
+        this.castSingularityVortex();
+        break;
+      // Alt + 1-4 for fast-travel
+      case 'Numpad1':
+        this.teleportTo('genesis');
+        break;
+      case 'Numpad2':
+        this.teleportTo('vault');
+        break;
+      case 'Numpad3':
+        this.teleportTo('spire');
+        break;
+      case 'Numpad4':
         this.teleportTo('beacon');
         break;
     }
@@ -312,44 +333,211 @@ export class GameController {
     audioSystem.playSubBassImpact();
     this.addCameraShake(0.85);
 
-    // Strike 8 units ahead of player orientation
+    // Strike 10 units ahead of player orientation
     const heading = this.player.rotation.y;
     const target = new THREE.Vector3(
-      this.player.position.x + Math.sin(heading) * 8,
-      0,
-      this.player.position.z + Math.cos(heading) * 8
+      this.player.position.x + Math.sin(heading) * 10,
+      this.player.position.y,
+      this.player.position.z + Math.cos(heading) * 10
     );
 
     this.vfx.triggerDivineSmite(target);
     if (this.hud) this.hud.showNotification('⚡ Celestial Smite Unleashed!', 'success');
+
+    // Check if hitting Void Rifts
+    this.checkTrialSmiteHit(target, 10);
   }
 
-  // Attempt interaction [E] with nearest shrine or relic
-  attemptInteraction() {
-    if (!this.nearbyInteractable) return;
-
-    const item = this.nearbyInteractable;
-    audioSystem.playCrystalChime();
-
-    // Mark as attuned
-    const isFirstTime = !this.attunedShrines.has(item.id);
-    this.attunedShrines.add(item.id);
-
-    // If it's an Astral Obelisk in the open world, award bonus Divine Favor!
-    if (item.data && item.data.isAstralObelisk) {
-      this.player.divineFavor = Math.min(this.player.maxDivineFavor, this.player.divineFavor + 50);
-      audioSystem.playCrystalChime(987); // B5
+  // 1. Meteor Tremor [1] (Unlocked via Titan Realm)
+  castMeteorTremor() {
+    if (!this.unlockedPowers.has('meteor')) {
+      if (this.hud) this.hud.showNotification('☄️ Meteor Tremor locked! Conquer the Trial of Ruin (Titan Shelf)', 'warning');
+      return;
+    }
+    if (this.powerCooldowns.meteor > 0) return;
+    if (this.player.divineFavor < 25) {
+      if (this.hud) this.hud.showNotification('Not enough Divine Favor!', 'warning');
+      return;
     }
 
-    // Cinematic camera focus on the interactable
-    this.isCinematicTransition = true;
-    const targetPos = item.position.clone();
+    this.player.divineFavor -= 25;
+    this.powerCooldowns.meteor = 4.5;
+    audioSystem.playMeteorTremor();
+    this.addCameraShake(0.75);
 
+    const heading = this.player.rotation.y;
+    const target = new THREE.Vector3(
+      this.player.position.x + Math.sin(heading) * 16,
+      this.player.position.y,
+      this.player.position.z + Math.cos(heading) * 16
+    );
+
+    this.vfx.triggerMeteorTremor(target);
+    if (this.hud) this.hud.showNotification('☄️ Meteor Tremor Unleashed!', 'success');
+
+    this.checkTrialSmiteHit(target, 14);
+  }
+
+  // 2. Graviton Pulse [2] (Unlocked via Crystal Realm)
+  castGravitonPulse() {
+    if (!this.unlockedPowers.has('graviton')) {
+      if (this.hud) this.hud.showNotification('🔮 Graviton Pulse locked! Conquer the Trial of Resonance (Crystal Crags)', 'warning');
+      return;
+    }
+    if (this.powerCooldowns.graviton > 0) return;
+    if (this.player.divineFavor < 15) {
+      if (this.hud) this.hud.showNotification('Not enough Divine Favor!', 'warning');
+      return;
+    }
+
+    this.player.divineFavor -= 15;
+    this.powerCooldowns.graviton = 3.5;
+    audioSystem.playGravitonPulse();
+    this.addCameraShake(0.4);
+
+    this.vfx.triggerGravitonPulse(this.player.position);
+    if (this.hud) this.hud.showNotification('🔮 Graviton Pulse Discharged!', 'success');
+  }
+
+  // 3. Astral Dash [3] (Unlocked via Chronos Realm)
+  castAstralDash() {
+    if (!this.unlockedPowers.has('blink')) {
+      if (this.hud) this.hud.showNotification('⚡ Astral Dash locked! Conquer the Trial of Chronokinesis (Cloud Spires)', 'warning');
+      return;
+    }
+    if (this.powerCooldowns.blink > 0) return;
+    if (this.player.divineFavor < 10) {
+      if (this.hud) this.hud.showNotification('Not enough Divine Favor!', 'warning');
+      return;
+    }
+
+    this.player.divineFavor -= 10;
+    this.powerCooldowns.blink = 2.0;
+
+    const oldPos = this.player.position.clone();
+    const forward = new THREE.Vector3(
+      -Math.sin(this.cameraYaw),
+      this.player.isFlying ? Math.sin(this.cameraPitch) * -0.5 : 0,
+      -Math.cos(this.cameraYaw)
+    ).normalize();
+
+    const dashDist = 32;
+    const newPos = oldPos.clone().add(forward.multiplyScalar(dashDist));
+
+    audioSystem.playAstralDash();
+    this.vfx.triggerAstralDash(oldPos, newPos);
+    this.player.position.copy(newPos);
+    this.player.velocity.set(0, 0, 0);
+    this.addCameraShake(0.35);
+
+    if (this.hud) this.hud.showNotification('⚡ Astral Dash!', 'info');
+  }
+
+  // 4. Singularity Vortex [4] (Unlocked via Abyss Realm)
+  castSingularityVortex() {
+    if (!this.unlockedPowers.has('singularity')) {
+      if (this.hud) this.hud.showNotification('🌌 Singularity Vortex locked! Conquer the Trial of Singularity (Abyssal Cascades)', 'warning');
+      return;
+    }
+    if (this.powerCooldowns.singularity > 0) return;
+    if (this.player.divineFavor < 30) {
+      if (this.hud) this.hud.showNotification('Not enough Divine Favor!', 'warning');
+      return;
+    }
+
+    this.player.divineFavor -= 30;
+    this.powerCooldowns.singularity = 5.5;
+    audioSystem.playSingularityVortex();
+    this.addCameraShake(0.6);
+
+    const heading = this.player.rotation.y;
+    const target = new THREE.Vector3(
+      this.player.position.x + Math.sin(heading) * 18,
+      this.player.position.y + 1,
+      this.player.position.z + Math.cos(heading) * 18
+    );
+
+    this.vfx.triggerSingularityVortex(target);
+    if (this.hud) this.hud.showNotification('🌌 Singularity Vortex Spawned!', 'success');
+
+    this.checkTrialSmiteHit(target, 16);
+  }
+
+  checkTrialSmiteHit(targetPos, radius = 8) {
+    if (!this.expanse || !this.expanse.trialEntities) return;
+    const rifts = this.expanse.trialEntities.titanRifts;
+    if (!rifts) return;
+
+    let destroyedAny = false;
+    rifts.forEach((rift) => {
+      if (!rift.isDestroyed && rift.position.distanceTo(targetPos) < radius) {
+        rift.isDestroyed = true;
+        rift.mesh.visible = false;
+        this.vfx.createGroundExplosion(rift.position, 0x7c3aed, 10);
+        destroyedAny = true;
+      }
+    });
+
+    if (destroyedAny) {
+      audioSystem.playCrystalChime(1108);
+      const remaining = rifts.filter(r => !r.isDestroyed).length;
+      if (this.hud) {
+        this.hud.showNotification(`⚡ Void Rift Destroyed! (${4 - remaining} / 4 Purged)`, 'success');
+      }
+      if (remaining === 0 && !this.clearedTrials.has('TITAN')) {
+        this.completeArchonTrial('TITAN');
+      }
+    }
+  }
+
+  // Attempt interaction [E] with nearest shrine, obelisk, stargate, or gear
+  attemptInteraction() {
+    if (!this.nearbyInteractable) return;
+    const item = this.nearbyInteractable;
+
+    // 1. Stargate warp interaction
+    if (item.data && item.data.isStargate) {
+      this.warpToSubRealm(item.data.destination, item.data.gateName);
+      return;
+    }
+    if (item.data && item.data.isReturnGate) {
+      this.returnFromSubRealm(item.data.returnRealmKey);
+      return;
+    }
+
+    // 2. Chronos Astrolabe Gear interaction
+    if (item.data && item.data.isChronosGear) {
+      if (window.game && window.game.currentRealm && window.game.currentRealm === CELESTIAL_REALMS.ECLIPSE) {
+        if (!this.clearedTrials.has('CHRONOS')) {
+          this.completeArchonTrial('CHRONOS');
+        } else {
+          if (this.hud) this.hud.showNotification('Chronos Astrolabe is locked in harmonic sync.', 'info');
+        }
+      } else {
+        if (this.hud) {
+          this.hud.showNotification('⏳ Temporal misalignment! Tap [T] to shift epoch into Nebula Eclipse!', 'warning');
+        }
+        audioSystem.playHoverStep();
+      }
+      return;
+    }
+
+    // 3. Shrines and Astral Obelisks
+    const isFirstTime = !this.attunedShrines.has(item.id);
+    this.attunedShrines.add(item.id);
+    this.player.divineFavor = Math.min(100, this.player.divineFavor + 25);
+
+    audioSystem.playShrineAttune(item.id);
+    this.vfx.triggerAttunementBeam(item.position);
+    this.addCameraShake(0.3);
+
+    // Smooth camera orbit look at shrine
+    this.isCinematicTransition = true;
     gsap.to(this.camera.position, {
-      x: targetPos.x + 5,
-      y: targetPos.y + 4,
-      z: targetPos.z + 7,
-      duration: 1.2,
+      x: item.position.x + Math.sin(this.cameraYaw) * 7,
+      y: item.position.y + 4,
+      z: item.position.z + Math.cos(this.cameraYaw) * 7,
+      duration: 1.0,
       ease: 'power2.out',
       onComplete: () => {
         this.isCinematicTransition = false;
@@ -383,12 +571,174 @@ export class GameController {
   triggerApotheosis() {
     audioSystem.playApotheosis();
     this.vfx.triggerApotheosisCelebration();
+    this.act = 2;
     if (this.hud) {
       this.hud.showAscensionBanner();
+      if (this.hud.switchToArchonTracker) this.hud.switchToArchonTracker();
     }
   }
 
-  // Fast-travel / teleport to a shrine
+  warpToSubRealm(destination, gateName) {
+    if (this.isCinematicTransition) return;
+    audioSystem.playStargateWarp();
+    this.vfx.triggerDivineSmite(this.player.position);
+    this.addCameraShake(0.6);
+
+    if (this.hud) {
+      this.hud.showNotification(`🌀 Wormhole Traverse: Entering ${gateName}...`, 'info');
+    }
+
+    this.isCinematicTransition = true;
+    gsap.to(this.player.position, {
+      x: destination.x,
+      y: destination.y + 2.0,
+      z: destination.z,
+      duration: 1.2,
+      ease: 'power2.inOut',
+      onComplete: () => {
+        this.player.velocity.set(0, 0, 0);
+        this.isCinematicTransition = false;
+        this.vfx.triggerDivineSmite(this.player.position);
+        this.addCameraShake(0.4);
+      }
+    });
+
+    const camTarget = new THREE.Vector3(
+      destination.x + Math.sin(this.cameraYaw) * this.cameraDistance,
+      destination.y + 4.0,
+      destination.z + Math.cos(this.cameraYaw) * this.cameraDistance
+    );
+    gsap.to(this.camera.position, {
+      x: camTarget.x,
+      y: camTarget.y,
+      z: camTarget.z,
+      duration: 1.2,
+      ease: 'power2.inOut'
+    });
+  }
+
+  returnFromSubRealm(returnRealmKey) {
+    if (this.isCinematicTransition) return;
+    audioSystem.playStargateWarp();
+    this.vfx.triggerDivineSmite(this.player.position);
+    this.addCameraShake(0.6);
+
+    const islandCoords = {
+      TITAN: { x: 195, y: 34, z: -210 },
+      CRYSTAL: { x: -230, y: -10, z: 195 },
+      CHRONOS: { x: 235, y: 54, z: 215 },
+      ABYSS: { x: -215, y: -36, z: -195 }
+    };
+    const dest = islandCoords[returnRealmKey] || { x: 0, y: 5, z: 0 };
+    const realmData = ARCHON_REALMS[returnRealmKey];
+
+    if (this.hud) {
+      this.hud.showNotification(`Returning to ${realmData ? realmData.region : 'Citadel'}...`, 'info');
+    }
+
+    this.isCinematicTransition = true;
+    gsap.to(this.player.position, {
+      x: dest.x,
+      y: dest.y,
+      z: dest.z,
+      duration: 1.2,
+      ease: 'power2.inOut',
+      onComplete: () => {
+        this.player.velocity.set(0, 0, 0);
+        this.isCinematicTransition = false;
+        this.vfx.triggerDivineSmite(this.player.position);
+        this.addCameraShake(0.4);
+      }
+    });
+
+    const camTarget = new THREE.Vector3(
+      dest.x + Math.sin(this.cameraYaw) * this.cameraDistance,
+      dest.y + 4.0,
+      dest.z + Math.cos(this.cameraYaw) * this.cameraDistance
+    );
+    gsap.to(this.camera.position, {
+      x: camTarget.x,
+      y: camTarget.y,
+      z: camTarget.z,
+      duration: 1.2,
+      ease: 'power2.inOut'
+    });
+  }
+
+  completeArchonTrial(realmKey) {
+    if (this.clearedTrials.has(realmKey)) return;
+    this.clearedTrials.add(realmKey);
+
+    const realm = ARCHON_REALMS[realmKey];
+    if (!realm) return;
+
+    // 1. Unlock Divine God Power
+    const powerId = realm.power.id || realm.power;
+    this.unlockedPowers.add(powerId);
+    if (this.hud && this.hud.unlockPowerButton) {
+      this.hud.unlockPowerButton(powerId);
+    }
+
+    // 2. Ignite Luminous Ley-Line Bridge from Citadel to this Archipelago
+    if (this.vfx && this.vfx.createLeyLineBridge) {
+      const bridgeAnchors = {
+        TITAN: {
+          start: new THREE.Vector3(25, 2.5, -45),
+          end: new THREE.Vector3(175, realm.position.y, -190)
+        },
+        CRYSTAL: {
+          start: new THREE.Vector3(-45, 2.5, 25),
+          end: new THREE.Vector3(-205, realm.position.y, 175)
+        },
+        CHRONOS: {
+          start: new THREE.Vector3(45, 2.5, 25),
+          end: new THREE.Vector3(210, realm.position.y, 190)
+        },
+        ABYSS: {
+          start: new THREE.Vector3(-45, 2.5, -25),
+          end: new THREE.Vector3(-190, realm.position.y, -175)
+        }
+      };
+
+      const anchor = bridgeAnchors[realmKey];
+      if (anchor) {
+        this.vfx.createLeyLineBridge(anchor.start, anchor.end, realm.bridge.color, realm.bridge.label);
+      }
+    }
+    audioSystem.playLeyLineIgnition();
+    audioSystem.playTrialSuccess();
+    this.addCameraShake(0.85);
+
+    // 3. Notify Player
+    if (this.hud) {
+      this.hud.showNotification(
+        `🏆 ${realm.trial.name} Conquered! Unlocked: ${realm.power.name} & Ignited Ley-Line Bridge!`,
+        'success'
+      );
+      if (this.hud.updateArchonProgress) {
+        this.hud.updateArchonProgress(this.clearedTrials.size, realmKey);
+      }
+    }
+
+    // 4. Check for Act III: Galactic Sovereignty
+    if (this.clearedTrials.size === 4 && this.act < 3) {
+      this.act = 3;
+      setTimeout(() => {
+        this.triggerGalacticSovereignty();
+      }, 2000);
+    }
+  }
+
+  triggerGalacticSovereignty() {
+    audioSystem.playApotheosis();
+    this.vfx.triggerApotheosisCelebration();
+    this.addCameraShake(1.0);
+
+    if (this.hud && this.hud.showGalacticSovereigntyBanner) {
+      this.hud.showGalacticSovereigntyBanner();
+    }
+  }
+
   teleportTo(shrineId) {
     let targetCoords;
     let targetYaw = 0;
@@ -535,7 +885,58 @@ export class GameController {
       this.shakeTrauma = Math.max(0, this.shakeTrauma - delta * 1.8);
     }
 
-    // 6. Proximity check for interactive shrines (Citadel + Expanse)
+    // 6. Countdown power cooldowns
+    for (const p in this.powerCooldowns) {
+      if (this.powerCooldowns[p] > 0) {
+        this.powerCooldowns[p] = Math.max(0, this.powerCooldowns[p] - delta);
+      }
+    }
+
+    // 7. Check Crystal Rings flight slalom
+    if (this.expanse && this.expanse.trialEntities && this.expanse.trialEntities.crystalRings) {
+      const rings = this.expanse.trialEntities.crystalRings;
+      rings.forEach((ring) => {
+        if (!ring.isCleared && this.player.position.distanceTo(ring.position) < ring.radius) {
+          ring.isCleared = true;
+          ring.mat.color.setHex(0xfef08a);
+          ring.mesh.scale.set(1.4, 1.4, 1.4);
+          audioSystem.playCrystalChime(784 + ring.index * 60);
+          const clearedCount = rings.filter(r => r.isCleared).length;
+          if (this.hud) {
+            this.hud.showNotification(`💎 Harmonic Ring Cleared (${clearedCount} / 5)`, 'info');
+          }
+          if (clearedCount === 5 && !this.clearedTrials.has('CRYSTAL')) {
+            this.completeArchonTrial('CRYSTAL');
+          }
+        }
+      });
+    }
+
+    // 8. Check Abyss Antimatter Glyphs collection
+    if (this.expanse && this.expanse.trialEntities && this.expanse.trialEntities.abyssGlyphs) {
+      const glyphs = this.expanse.trialEntities.abyssGlyphs;
+      let collectedAny = false;
+      glyphs.forEach((g) => {
+        if (!g.isCollected && this.player.position.distanceTo(g.position) < g.radius) {
+          g.isCollected = true;
+          g.mesh.visible = false;
+          this.vfx.createGroundExplosion(g.position, 0x10b981, 6);
+          collectedAny = true;
+        }
+      });
+      if (collectedAny) {
+        audioSystem.playCrystalChime(987);
+        const count = glyphs.filter(g => g.isCollected).length;
+        if (this.hud) {
+          this.hud.showNotification(`🌀 Antimatter Glyph Contained (${count} / 3)`, 'info');
+        }
+        if (count === 3 && !this.clearedTrials.has('ABYSS')) {
+          this.completeArchonTrial('ABYSS');
+        }
+      }
+    }
+
+    // 9. Proximity check for interactive shrines (Citadel + Expanse)
     this.checkProximity();
   }
 

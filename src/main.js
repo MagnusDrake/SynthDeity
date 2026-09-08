@@ -150,6 +150,8 @@ class GameEngine {
 
     // 4. Visual Effects Engine (Lightning, shockwaves, sparkles)
     this.vfx = new CelestialVFX(this.scene);
+    this.player.expanse = this.expanse;
+    this.player.vfx = this.vfx;
 
     // 5. Game HUD & UI
     this.hud = new CelestialHUD(this.hudContainer, {
@@ -196,6 +198,13 @@ class GameEngine {
       },
       onChronostasisToggle: () => {
         if (this.controller) this.controller.toggleChronostasis();
+      },
+      onCastPower: (powerKey) => {
+        if (!this.controller) return;
+        if (powerKey === 'meteor') this.controller.castMeteorTremor();
+        else if (powerKey === 'graviton') this.controller.castGravitonPulse();
+        else if (powerKey === 'blink') this.controller.castAstralDash();
+        else if (powerKey === 'singularity') this.controller.castSingularityVortex();
       },
       getAttunedShrines: () => {
         return this.controller ? this.controller.attunedShrines : new Set();

@@ -37,10 +37,10 @@ export class CelestialHUD {
             </div>
             <div>
               <h1 class="font-cinzel text-xl text-amber-200 tracking-wider font-bold drop-shadow-md">
-                AETHELGARD
+                SYNTHDEITY
               </h1>
               <div class="text-xs text-amber-400/80 tracking-widest uppercase">
-                Sanctuary of the Digital Deity
+                Loop Fabrication
               </div>
             </div>
           </div>
@@ -91,10 +91,10 @@ export class CelestialHUD {
           <!-- Quest Log -->
           <div class="quest-tracker">
             <div class="quest-header">
-              <span class="quest-title">DIVINE ASCENSION</span>
+              <span id="quest-title" class="quest-title">DIVINE ASCENSION</span>
               <span id="quest-count" class="quest-progress">0 / 4</span>
             </div>
-            <div class="quest-list">
+            <div id="quest-list" class="quest-list">
               <div class="quest-item" id="q-genesis">
                 <span class="q-check">○</span>
                 <span>The Genesis Monolith</span>
@@ -124,50 +124,53 @@ export class CelestialHUD {
         <!-- Notification Toast -->
         <div id="notification-toast" class="notification-toast hidden"></div>
 
-        <!-- Quick Travel / Action Dock (Bottom Center) -->
+        <!-- Divine Powers & Action Hotbar (Bottom Center) -->
         <div class="hud-dock">
           <div class="dock-buttons">
-            <button class="dock-btn" data-teleport="genesis" title="Teleport to Genesis [1]">
-              <span class="dock-key">1</span>
+            <button class="dock-btn action-smite" id="btn-smite" title="Cast Divine Smite [Q / LMB]">
+              <span class="dock-key">Q</span>
               <span class="dock-icon">⚡</span>
-              <span class="dock-title">Genesis</span>
+              <span class="dock-title">Smite</span>
             </button>
-            <button class="dock-btn" data-teleport="vault" title="Teleport to Vault of Creations [2]">
+            <button class="dock-btn power-btn locked" id="power-meteor" data-power="meteor" title="Meteor Tremor [1] (Conquer Titan Shelf)">
+              <span class="dock-key">1</span>
+              <span class="dock-icon">☄️</span>
+              <span class="dock-title">Meteor</span>
+              <span class="lock-indicator">🔒</span>
+            </button>
+            <button class="dock-btn power-btn locked" id="power-graviton" data-power="graviton" title="Graviton Pulse [2] (Conquer Crystal Crags)">
               <span class="dock-key">2</span>
               <span class="dock-icon">🔮</span>
-              <span class="dock-title">Creations</span>
+              <span class="dock-title">Graviton</span>
+              <span class="lock-indicator">🔒</span>
             </button>
-            <button class="dock-btn" data-teleport="spire" title="Teleport to Spire of Omnipotence [3]">
+            <button class="dock-btn power-btn locked" id="power-blink" data-power="blink" title="Astral Dash [3] (Conquer Cloud Spires)">
               <span class="dock-key">3</span>
-              <span class="dock-icon">🌌</span>
-              <span class="dock-title">Skills</span>
+              <span class="dock-icon">⚡</span>
+              <span class="dock-title">Dash</span>
+              <span class="lock-indicator">🔒</span>
             </button>
-            <button class="dock-btn" data-teleport="beacon" title="Teleport to Celestial Beacon [4]">
+            <button class="dock-btn power-btn locked" id="power-singularity" data-power="singularity" title="Singularity Vortex [4] (Conquer Abyssal Cascades)">
               <span class="dock-key">4</span>
-              <span class="dock-icon">🕊️</span>
-              <span class="dock-title">Contact</span>
+              <span class="dock-icon">🌌</span>
+              <span class="dock-title">Vortex</span>
+              <span class="lock-indicator">🔒</span>
             </button>
+            <div class="dock-divider"></div>
             <button class="dock-btn action-flight" id="btn-flight" title="Toggle Divine Flight [F]">
               <span class="dock-key">F</span>
               <span class="dock-icon">🕊️</span>
               <span class="dock-title">Fly</span>
-            </button>
-            <div class="dock-divider"></div>
-            <button class="dock-btn action-tour" id="btn-drone" title="Cinematic Drone Tour [C]">
-              <span class="dock-key">C</span>
-              <span class="dock-icon">🎬</span>
-              <span class="dock-title">Cinema</span>
             </button>
             <button class="dock-btn action-time" id="btn-time" title="Chronostasis Slow-Motion [B]">
               <span class="dock-key">B</span>
               <span class="dock-icon">⏳</span>
               <span class="dock-title">Time</span>
             </button>
-            <div class="dock-divider"></div>
-            <button class="dock-btn action-smite" id="btn-smite" title="Cast Divine Smite [Q]">
-              <span class="dock-key">Q</span>
-              <span class="dock-icon">⚡</span>
-              <span class="dock-title">Smite</span>
+            <button class="dock-btn action-tour" id="btn-drone" title="Cinematic Drone Tour [C]">
+              <span class="dock-key">C</span>
+              <span class="dock-icon">🎬</span>
+              <span class="dock-title">Cinema</span>
             </button>
           </div>
         </div>
@@ -217,12 +220,26 @@ export class CelestialHUD {
           <div class="ascension-content">
             <div class="ascension-glyph">👑</div>
             <h2 class="font-cinzel text-2xl md:text-3xl text-amber-200 font-bold tracking-widest">
-              GODHOOD ASCENDED
+              DIVINE ASCENSION ACHIEVED
             </h2>
             <p class="text-amber-100 text-sm mt-1 max-w-md text-center">
-              All 4 Sacred Sanctuaries have harmonized with your essence. The Celestial Citadel bows to your divine mastery.
+              The 4 Sacred Sanctuaries have harmonized with your essence. The Celestial Citadel bows to your mastery!
             </p>
-            <button id="ascension-dismiss" class="ascension-btn mt-4">Transcend Further</button>
+            <button id="ascension-dismiss" class="ascension-btn mt-4">Awaken the Archons</button>
+          </div>
+        </div>
+
+        <!-- Galactic Sovereignty Banner (Triggered upon 4/4 Archons Awakened) -->
+        <div id="galactic-banner" class="ascension-banner hidden">
+          <div class="ascension-content">
+            <div class="ascension-glyph">🌌</div>
+            <h2 class="font-cinzel text-2xl md:text-3xl text-cyan-200 font-bold tracking-widest">
+              GALACTIC SOVEREIGNTY ACHIEVED
+            </h2>
+            <p class="text-cyan-100 text-sm mt-1 max-w-md text-center">
+              The Four Precursor Archons have re-aligned. All Ley-Line Bridges illuminate the cosmos. The Galaxy of SynthDeity is fully fabricated!
+            </p>
+            <button id="galactic-dismiss" class="ascension-btn mt-4">Command the Cosmos</button>
           </div>
         </div>
 
@@ -331,8 +348,29 @@ export class CelestialHUD {
     if (ascDismiss) {
       ascDismiss.addEventListener('click', () => {
         this.container.querySelector('#ascension-banner').classList.add('hidden');
+        this.switchToArchonTracker();
       });
     }
+
+    // Galactic dismiss
+    const galDismiss = this.container.querySelector('#galactic-dismiss');
+    if (galDismiss) {
+      galDismiss.addEventListener('click', () => {
+        this.container.querySelector('#galactic-banner').classList.add('hidden');
+        this.showNotification('🌌 Galactic Sovereign: Command the Cosmos at will!', 'success');
+      });
+    }
+
+    // Divine Powers dock buttons
+    const powerButtons = this.container.querySelectorAll('.power-btn');
+    powerButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const power = btn.getAttribute('data-power');
+        if (this.callbacks.onCastPower) {
+          this.callbacks.onCastPower(power);
+        }
+      });
+    });
 
     // Quick-Travel Teleports
     const dockButtons = this.container.querySelectorAll('[data-teleport]');
@@ -651,6 +689,82 @@ export class CelestialHUD {
   showAscensionBanner() {
     const banner = this.container.querySelector('#ascension-banner');
     if (banner) banner.classList.remove('hidden');
+  }
+
+  showGalacticSovereigntyBanner() {
+    const banner = this.container.querySelector('#galactic-banner');
+    if (banner) banner.classList.remove('hidden');
+  }
+
+  switchToArchonTracker() {
+    const title = this.container.querySelector('#quest-title');
+    const count = this.container.querySelector('#quest-count');
+    const list = this.container.querySelector('#quest-list');
+    if (title) title.textContent = 'ARCHON AWAKENING';
+    if (count) count.textContent = '0 / 4';
+    if (list) {
+      list.innerHTML = `
+        <div class="quest-item" id="qa-titan">
+          <span class="q-check">○</span>
+          <span>Titan Shelf: Purge Void Rifts</span>
+        </div>
+        <div class="quest-item" id="qa-crystal">
+          <span class="q-check">○</span>
+          <span>Crystal Crags: Harmonic Slalom</span>
+        </div>
+        <div class="quest-item" id="qa-chronos">
+          <span class="q-check">○</span>
+          <span>Cloud Spires: Eclipse Sync</span>
+        </div>
+        <div class="quest-item" id="qa-abyss">
+          <span class="q-check">○</span>
+          <span>Abyssal Cascades: Contain Glyphs</span>
+        </div>
+      `;
+    }
+    this.showNotification('Act II Unlocked: Conquer the Archon Trials across the 4 Outer Realms!', 'info');
+  }
+
+  updateArchonProgress(count, realmKey) {
+    const countEl = this.container.querySelector('#quest-count');
+    if (countEl) countEl.textContent = `${count} / 4`;
+
+    const map = {
+      TITAN: 'qa-titan',
+      CRYSTAL: 'qa-crystal',
+      CHRONOS: 'qa-chronos',
+      ABYSS: 'qa-abyss'
+    };
+
+    if (realmKey && map[realmKey]) {
+      const el = this.container.querySelector(`#${map[realmKey]}`);
+      if (el) {
+        el.classList.add('quest-done');
+        const check = el.querySelector('.q-check');
+        if (check) check.textContent = '✓';
+      }
+    }
+  }
+
+  unlockPowerButton(powerKey) {
+    const btnMap = {
+      meteor: '#power-meteor',
+      graviton: '#power-graviton',
+      blink: '#power-blink',
+      singularity: '#power-singularity'
+    };
+    const selector = btnMap[powerKey];
+    if (selector) {
+      const btn = this.container.querySelector(selector);
+      if (btn) {
+        btn.classList.remove('locked');
+        btn.classList.add('unlocked');
+        const lock = btn.querySelector('.lock-indicator');
+        if (lock) lock.remove();
+        btn.classList.add('animate-pulse');
+        setTimeout(() => btn.classList.remove('animate-pulse'), 3000);
+      }
+    }
   }
 
   // Open rich modal for shrines and relics

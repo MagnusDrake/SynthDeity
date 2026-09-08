@@ -301,6 +301,199 @@ class CelestialAudio {
     osc.start(t);
     osc.stop(t + 0.65);
   }
+
+  // 1. Meteor Tremor Sound: Concussive sub-bass impact + seismic crack
+  playMeteorTremor() {
+    if (!this.ctx || this.isMuted) return;
+    this.resumeContext();
+    const t = this.ctx.currentTime;
+
+    // Screaming descent
+    const whistle = this.ctx.createOscillator();
+    const wGain = this.ctx.createGain();
+    whistle.type = 'sawtooth';
+    whistle.frequency.setValueAtTime(1200, t);
+    whistle.frequency.exponentialRampToValueAtTime(180, t + 0.4);
+    wGain.gain.setValueAtTime(0.25, t);
+    wGain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+    whistle.connect(wGain);
+    wGain.connect(this.sfxGain);
+    whistle.start(t);
+    whistle.stop(t + 0.45);
+
+    // Ground impact shockwave detonation
+    const boom = this.ctx.createOscillator();
+    const boomGain = this.ctx.createGain();
+    boom.type = 'triangle';
+    boom.frequency.setValueAtTime(110, t + 0.35);
+    boom.frequency.exponentialRampToValueAtTime(25, t + 1.8);
+    boomGain.gain.setValueAtTime(0.8, t + 0.35);
+    boomGain.gain.exponentialRampToValueAtTime(0.0001, t + 2.0);
+    boom.connect(boomGain);
+    boomGain.connect(this.sfxGain);
+    boom.start(t + 0.35);
+    boom.stop(t + 2.1);
+  }
+
+  // 2. Graviton Pulse: Spatial suction into ultrasonic crystalline shockwave
+  playGravitonPulse() {
+    if (!this.ctx || this.isMuted) return;
+    this.resumeContext();
+    const t = this.ctx.currentTime;
+
+    // Suction reverse sweep
+    const suckOsc = this.ctx.createOscillator();
+    const suckGain = this.ctx.createGain();
+    suckOsc.type = 'sine';
+    suckOsc.frequency.setValueAtTime(80, t);
+    suckOsc.frequency.exponentialRampToValueAtTime(650, t + 0.28);
+    suckGain.gain.setValueAtTime(0.05, t);
+    suckGain.gain.exponentialRampToValueAtTime(0.4, t + 0.28);
+    suckOsc.connect(suckGain);
+    suckGain.connect(this.sfxGain);
+    suckOsc.start(t);
+    suckOsc.stop(t + 0.3);
+
+    // Harmonic crystalline pulse
+    [523.25, 783.99, 1046.5].forEach((f, idx) => {
+      const chime = this.ctx.createOscillator();
+      const cGain = this.ctx.createGain();
+      chime.type = 'sine';
+      chime.frequency.setValueAtTime(f, t + 0.28);
+      cGain.gain.setValueAtTime(0.2, t + 0.28);
+      cGain.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+      chime.connect(cGain);
+      cGain.connect(this.sfxGain);
+      chime.start(t + 0.28);
+      chime.stop(t + 1.3);
+    });
+  }
+
+  // 3. Astral Dash / Sub-light Blink: Spatial phase-shift doppler zap
+  playAstralDash() {
+    if (!this.ctx || this.isMuted) return;
+    this.resumeContext();
+    const t = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const filter = this.ctx.createBiquadFilter();
+
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1400, t);
+    filter.frequency.exponentialRampToValueAtTime(200, t + 0.3);
+    filter.Q.setValueAtTime(4, t);
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(1800, t);
+    osc.frequency.exponentialRampToValueAtTime(120, t + 0.25);
+
+    gain.gain.setValueAtTime(0.35, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.35);
+  }
+
+  // 4. Singularity Vortex: Deep gravitational vacuum oscillation + dark nova
+  playSingularityVortex() {
+    if (!this.ctx || this.isMuted) return;
+    this.resumeContext();
+    const t = this.ctx.currentTime;
+
+    const vac = this.ctx.createOscillator();
+    const vacGain = this.ctx.createGain();
+    vac.type = 'sawtooth';
+    vac.frequency.setValueAtTime(55, t);
+    vac.frequency.exponentialRampToValueAtTime(32, t + 2.5);
+
+    vacGain.gain.setValueAtTime(0.4, t);
+    vacGain.gain.exponentialRampToValueAtTime(0.001, t + 2.8);
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(180, t);
+
+    vac.connect(filter);
+    filter.connect(vacGain);
+    vacGain.connect(this.sfxGain);
+    vac.start(t);
+    vac.stop(t + 2.9);
+  }
+
+  // 5. Luminous Ley-Line Ignition: Grand ascending laser beam chord
+  playLeyLineIgnition() {
+    if (!this.ctx || this.isMuted) return;
+    this.resumeContext();
+    const t = this.ctx.currentTime;
+
+    const chord = [220, 277.18, 329.63, 440, 554.37, 659.25, 880];
+    chord.forEach((freq, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq / 2, t + i * 0.08);
+      osc.frequency.exponentialRampToValueAtTime(freq, t + i * 0.08 + 0.6);
+
+      gain.gain.setValueAtTime(0.15, t + i * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 3.0);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t + i * 0.08);
+      osc.stop(t + 3.2);
+    });
+  }
+
+  // 6. Dimensional Stargate Warp
+  playStargateWarp() {
+    if (!this.ctx || this.isMuted) return;
+    this.resumeContext();
+    const t = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, t);
+    osc.frequency.exponentialRampToValueAtTime(2400, t + 0.6);
+    osc.frequency.exponentialRampToValueAtTime(400, t + 1.4);
+
+    gain.gain.setValueAtTime(0.3, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 1.6);
+  }
+
+  // 7. Trial Victory Fanfare
+  playTrialSuccess() {
+    if (!this.ctx || this.isMuted) return;
+    this.resumeContext();
+    const fanfare = [523.25, 659.25, 783.99, 1046.5];
+    fanfare.forEach((f, idx) => {
+      setTimeout(() => {
+        this.playCrystalChime(f);
+      }, idx * 140);
+    });
+  }
+
+  // 8. Shrine & Obelisk Attunement Chime
+  playShrineAttune(shrineId = 'genesis') {
+    const freqs = {
+      genesis: 587.33, // D5
+      vault: 659.25,   // E5
+      spire: 783.99,   // G5
+      beacon: 880.0    // A5
+    };
+    const f = freqs[shrineId] || 659.25;
+    this.playCrystalChime(f);
+  }
 }
 
 export const audioSystem = new CelestialAudio();
+
