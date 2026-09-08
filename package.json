@@ -1,0 +1,19 @@
+{
+  "name": "aethelgard",
+  "version": "1.0.0",
+  "description": "AETHELGARD: Sanctuary of the Digital Deity — An interactive 3D celestial web experience built with Three.js, PBR graphics, custom GLSL post-processing, and procedural Web Audio.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^8.2.2"
+  },
+  "dependencies": {
+    "gsap": "^3.15.0",
+    "three": "^0.185.1"
+  }
+}
