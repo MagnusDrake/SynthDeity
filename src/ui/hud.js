@@ -270,6 +270,20 @@ export class CelestialHUD {
               </div>
             </div>
 
+            <!-- Archon Lore Drawer (Sacred Mythos & Trial Details) -->
+            <div id="dialogue-lore-drawer" class="border-b border-slate-800 bg-slate-950/80 px-4 py-2">
+              <button id="dialogue-lore-toggle" class="flex justify-between items-center w-full text-xs font-mono text-amber-300 hover:text-amber-200 cursor-pointer">
+                <span class="flex items-center space-x-2">
+                  <span>📜</span>
+                  <span id="dialogue-lore-label" class="font-bold tracking-wider uppercase">Archon Mythos & Lore</span>
+                </span>
+                <span id="dialogue-lore-status" class="text-[10px] text-amber-400/80 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">▼ View Sacred Lore</span>
+              </button>
+              <div id="dialogue-lore-content" class="hidden mt-2 pt-2 border-t border-slate-800/80 text-xs text-slate-300 space-y-2 max-h-48 overflow-y-auto font-sans">
+                <!-- Injected dynamically -->
+              </div>
+            </div>
+
             <!-- Chat History -->
             <div id="dialogue-messages" class="p-4 overflow-y-auto space-y-3 flex-1 text-sm font-sans min-h-[220px]">
               <!-- Messages injected dynamically -->
@@ -914,32 +928,69 @@ export class CelestialHUD {
   }
 
   renderObeliskModal(data) {
+    const realmKey = (data.realmId || 'titan').toUpperCase();
+    const archonShort = data.archonName ? data.archonName.split(',')[0] : 'Archon';
     return `
-      <div class="space-y-6">
-        <div class="p-4 bg-purple-950/30 border border-purple-500/30 rounded-lg">
+      <div class="space-y-4">
+        <!-- Region & Type Badge -->
+        <div class="p-4 bg-purple-950/40 border border-purple-500/30 rounded-xl">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-mono font-bold text-purple-300 uppercase tracking-widest">${data.region}</span>
-            <span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-200 border border-purple-500/40">Astral Obelisk</span>
+            <span class="text-xs font-mono font-bold text-amber-300 uppercase tracking-widest">${data.region}</span>
+            <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-500/40 font-mono">Precursor Obelisk</span>
           </div>
-          <h3 class="text-base font-bold text-amber-200 mb-2">${data.lore.title}</h3>
-          <p class="text-sm text-slate-200 leading-relaxed">${data.lore.description}</p>
+          <div class="flex items-center space-x-2 mb-1">
+            <span class="text-xl">${data.icon || '⚔️'}</span>
+            <h3 class="text-base font-cinzel font-bold text-amber-200">${data.lore.title}</h3>
+          </div>
+          <p class="text-xs font-mono text-purple-300/90 mb-2">Sovereign: ${data.lore.archon || data.archonName}</p>
+          <p class="text-sm text-slate-200 leading-relaxed font-sans">${data.lore.description}</p>
         </div>
 
-        <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center space-x-3">
-          <span class="text-2xl">✨</span>
+        <!-- Revelation & Divine Favor -->
+        <div class="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center space-x-3.5">
+          <span class="text-2xl animate-pulse">✨</span>
           <div>
-            <div class="text-xs text-amber-300 font-bold">${data.lore.revelation}</div>
-            <div class="text-[11px] text-amber-100/70">+50 Divine Favor restored to your Seraph core</div>
+            <div class="text-xs text-amber-300 font-bold tracking-wide">${data.lore.revelation}</div>
+            <div class="text-[11px] text-amber-100/75 mt-0.5">+50 Divine Favor attuned to your Seraph core</div>
           </div>
         </div>
 
-        <div class="text-center pt-2">
-          <button class="px-6 py-2 rounded bg-purple-600/80 hover:bg-purple-500 text-white text-xs font-cinzel font-bold tracking-widest shadow-lg shadow-purple-900/50 transition-all cursor-pointer" onclick="window.game.hud.closeModal()">
-            Communion Complete
+        <!-- Endgame Archon Trial & Power Reward -->
+        ${data.trial ? `
+        <div class="p-3.5 bg-slate-950/60 border border-slate-800 rounded-xl">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-mono text-cyan-400 font-bold uppercase tracking-wider">⚔️ ${data.trial.name}: ${data.trial.title}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60 font-mono">Trial</span>
+          </div>
+          <p class="text-xs text-slate-300 mb-2">${data.trial.objective}</p>
+          <div class="flex items-center space-x-2 text-xs font-mono text-amber-300/90 bg-slate-900/80 px-2.5 py-1.5 rounded-lg border border-slate-700/50">
+            <span>🎁 Reward:</span>
+            <span class="font-bold text-amber-200">${data.power.icon} ${data.power.name} [Key ${data.power.key}]</span>
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- Dual Actions: Converse with AI Archon OR Complete Communion -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <button class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 text-xs font-cinzel font-bold tracking-wider shadow-lg shadow-amber-900/30 transition-all cursor-pointer flex items-center justify-center space-x-2"
+            onclick="window.game.hud.openDialogueForObelisk('${realmKey}')">
+            <span>💬</span>
+            <span>Converse with ${archonShort} [AI]</span>
+          </button>
+          <button class="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-cinzel font-bold tracking-wider border border-slate-700 hover:border-slate-600 shadow-md transition-all cursor-pointer"
+            onclick="window.game.hud.closeModal()">
+            <span>✦ Attunement Complete</span>
           </button>
         </div>
       </div>
     `;
+  }
+
+  openDialogueForObelisk(realmKey) {
+    this.closeModal();
+    if (!window.game || !window.game.aiEngine) return;
+    const persona = window.game.aiEngine.personas[realmKey] || window.game.aiEngine.personas.VALDOR;
+    this.openDialogue(persona, window.game.aiEngine);
   }
 
   closeModal() {
@@ -1285,6 +1336,54 @@ export class CelestialHUD {
         this.showNotification(entered ? 'Gemini API Key Saved!' : 'Switched to Procedural Semantic AI', 'info');
       }
     };
+
+    // Render Archon Lore Drawer
+    const loreDrawer = modal.querySelector('#dialogue-lore-drawer');
+    const loreToggle = modal.querySelector('#dialogue-lore-toggle');
+    const loreStatus = modal.querySelector('#dialogue-lore-status');
+    const loreContent = modal.querySelector('#dialogue-lore-content');
+    const loreLabel = modal.querySelector('#dialogue-lore-label');
+
+    if (loreDrawer && persona.lore) {
+      loreDrawer.classList.remove('hidden');
+      if (loreLabel) loreLabel.innerText = `${persona.name}'s Sacred Mythos & Lore`;
+      if (loreContent) {
+        loreContent.innerHTML = `
+          <div class="p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-cinzel font-bold text-amber-200">${persona.lore.title || ''}</span>
+              <span class="text-[10px] font-mono text-purple-300 uppercase">${persona.region || ''}</span>
+            </div>
+            <p class="text-xs text-slate-200 leading-relaxed font-sans">${persona.lore.description || ''}</p>
+          </div>
+          ${persona.lore.revelation ? `
+          <div class="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center space-x-2 text-xs text-amber-200">
+            <span>✨</span>
+            <span class="font-bold">${persona.lore.revelation}</span>
+          </div>` : ''}
+          ${persona.trial ? `
+          <div class="p-2.5 bg-slate-950/80 border border-slate-800 rounded-lg text-xs space-y-1">
+            <div class="font-mono font-bold text-cyan-300 flex justify-between">
+              <span>⚔️ ${persona.trial.name}: ${persona.trial.title}</span>
+              <span class="text-[10px] text-cyan-400/80 font-mono">Trial</span>
+            </div>
+            <p class="text-[11px] text-slate-300">${persona.trial.objective}</p>
+            ${persona.power ? `<div class="text-[11px] font-mono text-amber-300 mt-1">🎁 Unlocks: ${persona.power.icon} ${persona.power.name} [Key ${persona.power.key}]</div>` : ''}
+          </div>` : ''}
+        `;
+        loreContent.classList.add('hidden');
+      }
+      if (loreStatus) loreStatus.innerText = '▼ View Sacred Lore';
+      if (loreToggle) {
+        loreToggle.onclick = () => {
+          if (!loreContent) return;
+          const isHidden = loreContent.classList.toggle('hidden');
+          if (loreStatus) loreStatus.innerText = isHidden ? '▼ View Sacred Lore' : '▲ Collapse Lore';
+        };
+      }
+    } else if (loreDrawer) {
+      loreDrawer.classList.add('hidden');
+    }
 
     input.focus();
   }

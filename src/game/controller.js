@@ -551,16 +551,6 @@ export class GameController {
     if (!this.nearbyInteractable) return;
     const item = this.nearbyInteractable;
 
-    // Archon Obelisk AI Dialogue trigger
-    if (item.data && item.data.isAstralObelisk) {
-      const realmKey = (item.data.realmId || 'TITAN').toUpperCase();
-      const persona = ARCHON_PERSONAS[realmKey] || ARCHON_PERSONAS.VALDOR;
-      if (this.hud && this.aiEngine) {
-        this.hud.openDialogue(persona, this.aiEngine);
-        return;
-      }
-    }
-
     // 1. Stargate warp interaction
     if (item.data && item.data.isStargate) {
       this.warpToSubRealm(item.data.destination, item.data.gateName);
@@ -658,7 +648,12 @@ export class GameController {
   }
 
   openEidolonDialogue() {
-    if (this.hud && this.aiEngine) {
+    if (!this.hud || !this.aiEngine) return;
+    if (this.nearbyInteractable && this.nearbyInteractable.data && this.nearbyInteractable.data.isAstralObelisk) {
+      const realmKey = (this.nearbyInteractable.data.realmId || 'TITAN').toUpperCase();
+      const persona = ARCHON_PERSONAS[realmKey] || ARCHON_PERSONAS.VALDOR;
+      this.hud.openDialogue(persona, this.aiEngine);
+    } else {
       this.hud.openDialogue(ARCHON_PERSONAS.EIDOLON, this.aiEngine);
     }
   }
@@ -1122,7 +1117,11 @@ export class GameController {
 
     if (this.hud) {
       if (nearest) {
-        this.hud.showInteractPrompt(`[E] Attune with ${nearest.name}`);
+        if (nearest.data && nearest.data.isAstralObelisk) {
+          this.hud.showInteractPrompt(`[E] Commune & Sacred Lore | [Y] Converse [AI]`);
+        } else {
+          this.hud.showInteractPrompt(`[E] Attune with ${nearest.name}`);
+        }
       } else {
         this.hud.hideInteractPrompt();
       }
