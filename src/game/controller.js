@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { audioSystem } from '../audio/synth.js';
 import { ARCHON_REALMS, CELESTIAL_REALMS } from '../game/constants.js';
+import { ARCHON_PERSONAS } from '../ai/archon_ai.js';
 
 export class GameController {
   constructor(camera, player, citadel, vfx, hud, expanse = null) {
@@ -12,6 +13,15 @@ export class GameController {
     this.vfx = vfx;
     this.hud = hud;
     this.expanse = expanse;
+
+    // Advanced Subsystems
+    this.mountedManta = null;
+    this.aiEngine = null;
+    this.sandbox = null;
+    this.boss = null;
+    this.weather = null;
+    this.eidolon = null;
+    this.elapsedTime = 0;
 
     if (this.expanse && this.player.setExpanse) {
       this.player.setExpanse(this.expanse);
@@ -108,9 +118,13 @@ export class GameController {
     window.addEventListener('keydown', (e) => this.onKeyDown(e));
     window.addEventListener('keyup', (e) => this.onKeyUp(e));
 
-    // Mouse drag for camera orbit
+    // Mouse drag for camera orbit / Genesis fabrication
     window.addEventListener('mousedown', (e) => {
       if (e.target.closest('#hud-container') && !e.target.classList.contains('drag-passthrough')) {
+        return;
+      }
+      if (this.sandbox && this.sandbox.isActive) {
+        this.sandbox.fabricateAtReticle();
         return;
       }
       this.isDragging = true;
@@ -167,6 +181,10 @@ export class GameController {
         this.inputState.moveRight = true;
         break;
       case 'Space':
+        if (this.mountedManta) {
+          this.dismountManta();
+          break;
+        }
         if (!this.inputState.jump) {
           audioSystem.playAscendSound();
         }
@@ -175,9 +193,20 @@ export class GameController {
       case 'ShiftLeft':
       case 'ShiftRight':
         this.inputState.sprint = true;
+        if (this.mountedManta) {
+          audioSystem.playMantaBoost();
+          this.vfx.triggerDivineSmite(this.player.position);
+          this.addCameraShake(0.3);
+        }
         break;
       case 'KeyE':
         this.attemptInteraction();
+        break;
+      case 'KeyG':
+        if (this.sandbox) this.sandbox.toggle();
+        break;
+      case 'KeyY':
+        this.openEidolonDialogue();
         break;
       case 'KeyF':
         const isFlying = this.player.toggleFlight();
@@ -344,8 +373,8 @@ export class GameController {
     this.vfx.triggerDivineSmite(target);
     if (this.hud) this.hud.showNotification('⚡ Celestial Smite Unleashed!', 'success');
 
-    // Check if hitting Void Rifts
-    this.checkTrialSmiteHit(target, 10);
+    // Check if hitting Void Rifts / Boss
+    this.checkTrialSmiteHit(target, 10, 'smite', 40);
   }
 
   // 1. Meteor Tremor [1] (Unlocked via Titan Realm)
@@ -375,7 +404,7 @@ export class GameController {
     this.vfx.triggerMeteorTremor(target);
     if (this.hud) this.hud.showNotification('☄️ Meteor Tremor Unleashed!', 'success');
 
-    this.checkTrialSmiteHit(target, 14);
+    this.checkTrialSmiteHit(target, 14, 'meteor', 90);
   }
 
   // 2. Graviton Pulse [2] (Unlocked via Crystal Realm)
@@ -397,6 +426,8 @@ export class GameController {
 
     this.vfx.triggerGravitonPulse(this.player.position);
     if (this.hud) this.hud.showNotification('🔮 Graviton Pulse Discharged!', 'success');
+
+    this.checkTrialSmiteHit(this.player.position, 20, 'graviton', 80);
   }
 
   // 3. Astral Dash [3] (Unlocked via Chronos Realm)
@@ -460,10 +491,21 @@ export class GameController {
     this.vfx.triggerSingularityVortex(target);
     if (this.hud) this.hud.showNotification('🌌 Singularity Vortex Spawned!', 'success');
 
-    this.checkTrialSmiteHit(target, 16);
+    this.checkTrialSmiteHit(target, 16, 'singularity', 150);
   }
 
-  checkTrialSmiteHit(targetPos, radius = 8) {
+  checkTrialSmiteHit(targetPos, radius = 8, powerType = 'smite', damage = 50) {
+    // Check hit on Void Leviathan Boss
+    if (this.boss && this.boss.isSpawned && !this.boss.isDead && this.boss.headMesh) {
+      const dist = this.boss.headMesh.position.distanceTo(targetPos);
+      if (dist < radius + 18) {
+        this.boss.takeDamage(damage, powerType);
+        if (this.vfx && this.vfx.createGroundExplosion) {
+          this.vfx.createGroundExplosion(this.boss.headMesh.position, 0xef4444, 15);
+        }
+      }
+    }
+
     if (!this.expanse || !this.expanse.trialEntities) return;
     const rifts = this.expanse.trialEntities.titanRifts;
     if (!rifts) return;
@@ -492,8 +534,32 @@ export class GameController {
 
   // Attempt interaction [E] with nearest shrine, obelisk, stargate, or gear
   attemptInteraction() {
+    // 0. Check for Manta mounting / dismounting
+    if (this.mountedManta) {
+      this.dismountManta();
+      return;
+    }
+
+    if (this.expanse && this.expanse.getNearestManta) {
+      const nearManta = this.expanse.getNearestManta(this.player.position, 18);
+      if (nearManta) {
+        this.mountManta(nearManta.manta);
+        return;
+      }
+    }
+
     if (!this.nearbyInteractable) return;
     const item = this.nearbyInteractable;
+
+    // Archon Obelisk AI Dialogue trigger
+    if (item.data && item.data.isAstralObelisk) {
+      const realmKey = (item.data.realmId || 'TITAN').toUpperCase();
+      const persona = ARCHON_PERSONAS[realmKey] || ARCHON_PERSONAS.VALDOR;
+      if (this.hud && this.aiEngine) {
+        this.hud.openDialogue(persona, this.aiEngine);
+        return;
+      }
+    }
 
     // 1. Stargate warp interaction
     if (item.data && item.data.isStargate) {
@@ -565,6 +631,35 @@ export class GameController {
           this.triggerApotheosis();
         }, 1200);
       }
+    }
+  }
+
+  mountManta(manta) {
+    if (this.mountedManta) return;
+    this.mountedManta = manta;
+    manta.isMounted = true;
+    this.player.isFlying = true;
+    this.cameraDistance = 24;
+    audioSystem.playMantaMount();
+    if (this.hud) {
+      this.hud.showNotification('🕊️ Mounted Celestial Star-Manta! [WASD: Steer | Shift: Turbo | Space: Dismount]', 'success');
+    }
+  }
+
+  dismountManta() {
+    if (!this.mountedManta) return;
+    this.mountedManta.isMounted = false;
+    this.mountedManta = null;
+    this.cameraDistance = 10;
+    audioSystem.playHoverStep();
+    if (this.hud) {
+      this.hud.showNotification('Dismounted from Celestial Star-Manta into free flight!', 'info');
+    }
+  }
+
+  openEidolonDialogue() {
+    if (this.hud && this.aiEngine) {
+      this.hud.openDialogue(ARCHON_PERSONAS.EIDOLON, this.aiEngine);
     }
   }
 
@@ -835,6 +930,43 @@ export class GameController {
   }
 
   update(delta) {
+    this.elapsedTime += delta;
+
+    // 0. Update Mounted Manta Flight Physics
+    if (this.mountedManta) {
+      const m = this.mountedManta;
+      const speed = this.inputState.sprint ? 58 : 32;
+
+      // Aerial Steering
+      if (this.inputState.moveLeft) m.mesh.rotation.y += delta * 1.8;
+      if (this.inputState.moveRight) m.mesh.rotation.y -= delta * 1.8;
+
+      // Ascend / Descend
+      if (this.inputState.jump) m.mesh.position.y += delta * 24;
+      if (this.inputState.sprint && !this.inputState.jump) m.mesh.position.y -= delta * 6;
+
+      // Move forward in current heading
+      const heading = m.mesh.rotation.y;
+      m.mesh.position.x -= Math.sin(heading) * speed * delta;
+      m.mesh.position.z -= Math.cos(heading) * speed * delta;
+
+      // Aerodynamic Wing Flap
+      const flapSpeed = this.inputState.sprint ? 8 : 4;
+      const flap = Math.sin(this.elapsedTime * flapSpeed) * 0.45;
+      if (m.leftWing) m.leftWing.rotation.z = flap;
+      if (m.rightWing) m.rightWing.rotation.z = -flap;
+
+      // Snap player avatar to dorsal harness
+      this.player.position.copy(m.mesh.position).add(new THREE.Vector3(0, 1.8, 0));
+      this.player.velocity.set(0, 0, 0);
+      this.cameraYaw = heading;
+    }
+
+    // Update Genesis Sandbox Reticle
+    if (this.sandbox && this.sandbox.isActive) {
+      this.sandbox.update(delta, this.player.position);
+    }
+
     // 1. Pass camera orientation to player controller
     this.inputState.cameraYaw = this.cameraYaw;
     this.inputState.cameraPitch = this.cameraPitch;

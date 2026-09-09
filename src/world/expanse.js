@@ -9,6 +9,7 @@ export class AstralExpanse {
     this.interactiveObjects = [];
     this.animatedObjects = [];
     this.landmasses = []; // For collision detection: { x, z, radius, topY }
+    this.bridges = []; // For dynamic bridges: { startX, startY, startZ, endX, endY, endZ, width }
 
     this.initTextures();
     this.initArchipelagos();
@@ -547,6 +548,7 @@ export class AstralExpanse {
 
   // Query floor height across any open world island or sub-realm
   getFloorHeight(x, z) {
+    // 1. Check landmasses
     for (let i = 0; i < this.landmasses.length; i++) {
       const land = this.landmasses[i];
       const dx = x - land.x;
@@ -556,7 +558,29 @@ export class AstralExpanse {
         return land.topY;
       }
     }
-    return null; // Not over any open world landmass
+
+    // 2. Check dynamic bridges
+    if (this.bridges) {
+      for (let i = 0; i < this.bridges.length; i++) {
+        const b = this.bridges[i];
+        const dx = x - b.startX;
+        const dz = z - b.startZ;
+        const lx = b.endX - b.startX;
+        const lz = b.endZ - b.startZ;
+        const lenSq = lx * lx + lz * lz;
+        if (lenSq > 0) {
+          const t = Math.max(0, Math.min(1, (dx * lx + dz * lz) / lenSq));
+          const projX = b.startX + t * lx;
+          const projZ = b.startZ + t * lz;
+          const distToBridge = Math.hypot(x - projX, z - projZ);
+          if (distToBridge <= (b.width || 6) * 0.5) {
+            return b.startY + t * (b.endY - b.startY) + 0.3;
+          }
+        }
+      }
+    }
+
+    return null; // Not over any open world landmass or bridge
   }
 
   // =========================================================================
@@ -1042,18 +1066,20 @@ export class AstralExpanse {
     });
   }
 
-  // Determines ground elevation for all open world archipelagos and sub-realms
-  getFloorHeight(x, z) {
-    if (!this.landmasses) return null;
-    for (let i = 0; i < this.landmasses.length; i++) {
-      const lm = this.landmasses[i];
-      const dx = x - lm.x;
-      const dz = z - lm.z;
-      if (dx * dx + dz * dz <= lm.radius * lm.radius) {
-        return lm.topY;
+
+  getNearestManta(pos, maxDist = 18) {
+    if (!this.mantas) return null;
+    let closest = null;
+    let minDist = maxDist;
+    for (let i = 0; i < this.mantas.length; i++) {
+      const m = this.mantas[i];
+      const d = m.mesh.position.distanceTo(pos);
+      if (d < minDist) {
+        minDist = d;
+        closest = { manta: m, index: i, distance: d };
       }
     }
-    return null;
+    return closest;
   }
 
   update(delta, elapsed) {
@@ -1065,6 +1091,7 @@ export class AstralExpanse {
     // Tick Celestial Mantas
     if (this.mantas) {
       this.mantas.forEach((m) => {
+        if (m.isMounted) return;
         m.angle += delta * m.config.speed;
         const x = Math.cos(m.angle) * m.config.radius;
         const z = Math.sin(m.angle) * m.config.radius;

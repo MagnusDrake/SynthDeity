@@ -58,6 +58,16 @@ export class CelestialHUD {
 
           <!-- Top-Right Controls -->
           <div class="flex items-center space-x-2">
+            <button id="btn-genesis" class="hud-btn" title="Genesis World-Fabrication Mode [G]">
+              <span class="hud-icon">🔨</span>
+              <span class="hidden md:inline text-xs">Genesis</span>
+            </button>
+
+            <button id="btn-eidolon" class="hud-btn" title="Speak with Echo Eidolon [Y]">
+              <span class="hud-icon">✦</span>
+              <span class="hidden md:inline text-xs">Companion</span>
+            </button>
+
             <button id="btn-realm" class="hud-btn" title="Shift Realm Skybox [T]">
               <span class="hud-icon">🌌</span>
               <span id="realm-label" class="hidden md:inline text-xs">Solar Dawn</span>
@@ -198,6 +208,89 @@ export class CelestialHUD {
           </div>
         </div>
 
+        <!-- Astral Void Leviathan Boss Health Bar -->
+        <div id="boss-hud-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-40 hidden flex flex-col items-center w-full max-w-xl px-4 pointer-events-none">
+          <div class="flex justify-between items-center w-full text-xs font-mono text-amber-300 font-bold mb-1">
+            <span id="boss-name" class="font-cinzel text-sm tracking-wider text-rose-400 drop-shadow-md">Ouroboros, The Null-Serpent</span>
+            <span id="boss-hp-val" class="text-rose-300">1000 / 1000</span>
+          </div>
+          <div class="w-full h-3.5 bg-slate-950/90 rounded-full border border-rose-500/50 overflow-hidden shadow-2xl backdrop-blur-md">
+            <div id="boss-hp-bar" class="h-full bg-gradient-to-r from-rose-600 via-purple-600 to-amber-500 transition-all duration-200" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- Genesis World-Fabrication Dock (Active when [G] is toggled) -->
+        <div id="genesis-dock" class="fixed bottom-28 left-1/2 -translate-x-1/2 z-40 hidden bg-slate-900/95 border border-amber-500/40 rounded-xl px-5 py-3 shadow-2xl backdrop-blur-lg flex items-center space-x-3">
+          <div class="text-xs font-mono text-amber-400 font-bold uppercase tracking-wider pr-2 border-r border-slate-700">
+            🔨 GENESIS
+          </div>
+          <button id="genesis-tool-island" class="genesis-btn px-3 py-1.5 rounded text-xs font-mono bg-amber-500/30 text-amber-200 border border-amber-400/50 hover:bg-amber-500/40 transition">
+            🏝️ Island
+          </button>
+          <button id="genesis-tool-bridge" class="genesis-btn px-3 py-1.5 rounded text-xs font-mono bg-slate-800/60 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+            🌈 Bridge
+          </button>
+          <button id="genesis-tool-crystal" class="genesis-btn px-3 py-1.5 rounded text-xs font-mono bg-slate-800/60 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+            💎 Crystal
+          </button>
+          <div class="h-5 w-[1px] bg-slate-700"></div>
+          <select id="genesis-mat-select" class="bg-slate-950 border border-slate-700 text-xs font-mono text-amber-300 rounded px-2 py-1 focus:outline-none">
+            <option value="marble">⚪ Gold Marble</option>
+            <option value="rune">🔮 Rune Slate</option>
+            <option value="rock">🪨 Crystal Rock</option>
+          </select>
+          <div class="h-5 w-[1px] bg-slate-700"></div>
+          <button id="genesis-undo" class="px-2.5 py-1.5 rounded text-xs font-mono bg-rose-950/40 text-rose-300 border border-rose-800/50 hover:bg-rose-900/40 transition" title="Dematerialize last created structure">
+            ✕ Undo
+          </button>
+        </div>
+
+        <!-- Conversational Archon & AI Dialogue Modal -->
+        <div id="ai-dialogue-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div class="bg-slate-900/95 border border-amber-500/40 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            <!-- Header -->
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/60">
+              <div class="flex items-center space-x-3">
+                <div id="dialogue-avatar" class="text-3xl">⚔️</div>
+                <div>
+                  <h3 id="dialogue-title" class="font-cinzel text-lg font-bold text-amber-200">Valdor</h3>
+                  <p id="dialogue-subtitle" class="text-xs font-mono text-amber-400/80">Archon of Foundational Ruin</p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <button id="dialogue-voice-btn" class="p-2 rounded bg-slate-800/60 hover:bg-slate-700 text-xs font-mono text-amber-300" title="Toggle AI Voice Output">
+                  🔊 Voice
+                </button>
+                <button id="dialogue-key-btn" class="p-2 rounded bg-slate-800/60 hover:bg-slate-700 text-xs font-mono text-amber-300" title="Set Google Gemini API Key">
+                  🔑 API Key
+                </button>
+                <button id="dialogue-close-btn" class="p-2 rounded bg-slate-800/60 hover:bg-rose-900/50 text-slate-400 hover:text-rose-300 text-sm font-bold">
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <!-- Chat History -->
+            <div id="dialogue-messages" class="p-4 overflow-y-auto space-y-3 flex-1 text-sm font-sans min-h-[220px]">
+              <!-- Messages injected dynamically -->
+            </div>
+
+            <!-- Quick Reply Chips -->
+            <div id="dialogue-quick-replies" class="px-4 py-2 bg-slate-950/40 border-t border-slate-800/60 flex flex-wrap gap-1.5">
+              <!-- Quick prompts injected dynamically -->
+            </div>
+
+            <!-- Input Bar -->
+            <div class="p-3 border-t border-slate-800 bg-slate-950/80 flex items-center space-x-2">
+              <input type="text" id="dialogue-input" placeholder="Speak with the Archon... (Enter to send)"
+                class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-400"/>
+              <button id="dialogue-send-btn" class="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold rounded-lg text-sm transition">
+                Send ✦
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Modal Dialog Container -->
         <div id="modal-backdrop" class="modal-backdrop hidden">
           <div id="modal-card" class="modal-card">
@@ -308,6 +401,22 @@ export class CelestialHUD {
   }
 
   bindEvents() {
+    // Genesis Toggle [G]
+    const btnGenesis = this.container.querySelector('#btn-genesis');
+    if (btnGenesis) {
+      btnGenesis.addEventListener('click', () => {
+        if (this.callbacks.onToggleGenesis) this.callbacks.onToggleGenesis();
+      });
+    }
+
+    // Eidolon Dialogue [Y]
+    const btnEidolon = this.container.querySelector('#btn-eidolon');
+    if (btnEidolon) {
+      btnEidolon.addEventListener('click', () => {
+        if (this.callbacks.onOpenEidolon) this.callbacks.onOpenEidolon();
+      });
+    }
+
     // Audio Toggle
     const btnAudio = this.container.querySelector('#btn-audio');
     if (btnAudio) {
@@ -1041,4 +1150,221 @@ export class CelestialHUD {
       this.showNotification('Transmission sent into the ether!', 'success');
     });
   }
+
+  // =========================================================================
+  // GENESIS WORLD-BUILDING DOCK
+  // =========================================================================
+  toggleGenesisToolbar(visible) {
+    const dock = this.container.querySelector('#genesis-dock');
+    if (dock) {
+      if (visible) dock.classList.remove('hidden');
+      else dock.classList.add('hidden');
+    }
+  }
+
+  bindGenesisEvents(sandbox) {
+    if (!sandbox) return;
+
+    const btnIsland = this.container.querySelector('#genesis-tool-island');
+    const btnBridge = this.container.querySelector('#genesis-tool-bridge');
+    const btnCrystal = this.container.querySelector('#genesis-tool-crystal');
+    const matSelect = this.container.querySelector('#genesis-mat-select');
+    const btnUndo = this.container.querySelector('#genesis-undo');
+
+    const setActive = (activeBtn) => {
+      [btnIsland, btnBridge, btnCrystal].forEach(b => {
+        if (!b) return;
+        b.classList.remove('bg-amber-500/30', 'text-amber-200', 'border-amber-400/50');
+        b.classList.add('bg-slate-800/60', 'text-slate-300', 'border-slate-700');
+      });
+      activeBtn.classList.add('bg-amber-500/30', 'text-amber-200', 'border-amber-400/50');
+      activeBtn.classList.remove('bg-slate-800/60', 'text-slate-300', 'border-slate-700');
+    };
+
+    if (btnIsland) {
+      btnIsland.addEventListener('click', () => {
+        sandbox.setTool('island');
+        setActive(btnIsland);
+      });
+    }
+    if (btnBridge) {
+      btnBridge.addEventListener('click', () => {
+        sandbox.setTool('bridge');
+        setActive(btnBridge);
+      });
+    }
+    if (btnCrystal) {
+      btnCrystal.addEventListener('click', () => {
+        sandbox.setTool('crystal');
+        setActive(btnCrystal);
+      });
+    }
+    if (matSelect) {
+      matSelect.addEventListener('change', (e) => {
+        sandbox.setMaterial(e.target.value);
+      });
+    }
+    if (btnUndo) {
+      btnUndo.addEventListener('click', () => {
+        sandbox.dematerializeLast();
+      });
+    }
+  }
+
+  // =========================================================================
+  // CONVERSATIONAL AI & ARCHON DIALOGUE MODAL
+  // =========================================================================
+  openDialogue(persona, aiEngine) {
+    const modal = this.container.querySelector('#ai-dialogue-modal');
+    if (!modal) return;
+
+    this.isDialogueOpen = true;
+    modal.classList.remove('hidden');
+
+    const avatar = modal.querySelector('#dialogue-avatar');
+    const title = modal.querySelector('#dialogue-title');
+    const subtitle = modal.querySelector('#dialogue-subtitle');
+    const msgBox = modal.querySelector('#dialogue-messages');
+    const quickRepliesBox = modal.querySelector('#dialogue-quick-replies');
+    const input = modal.querySelector('#dialogue-input');
+    const sendBtn = modal.querySelector('#dialogue-send-btn');
+    const closeBtn = modal.querySelector('#dialogue-close-btn');
+    const voiceBtn = modal.querySelector('#dialogue-voice-btn');
+    const keyBtn = modal.querySelector('#dialogue-key-btn');
+
+    avatar.innerText = persona.avatar || '✦';
+    title.innerText = persona.name;
+    title.style.color = persona.color || '#f59e0b';
+    subtitle.innerText = `${persona.title} • ${persona.region}`;
+
+    // Reset messages with introductory greeting
+    msgBox.innerHTML = `
+      <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl max-w-[85%] text-slate-200">
+        <div class="text-[11px] font-mono text-amber-400/90 font-bold mb-1">${persona.name}</div>
+        <p>I am ${persona.name}, ${persona.title}. What knowledge or challenge do you seek from the loop?</p>
+      </div>
+    `;
+
+    // Render quick reply action chips
+    quickRepliesBox.innerHTML = '';
+    (persona.quickReplies || []).forEach(q => {
+      const chip = document.createElement('button');
+      chip.className = 'px-2.5 py-1 text-xs font-sans rounded-full bg-slate-800/80 hover:bg-amber-500/20 text-slate-300 hover:text-amber-200 border border-slate-700 transition';
+      chip.innerText = q;
+      chip.addEventListener('click', () => {
+        this.sendDialogueMessage(q, persona, aiEngine);
+      });
+      quickRepliesBox.appendChild(chip);
+    });
+
+    // Wire send
+    const handleSend = () => {
+      const val = (input.value || '').trim();
+      if (!val) return;
+      input.value = '';
+      this.sendDialogueMessage(val, persona, aiEngine);
+    };
+
+    sendBtn.onclick = handleSend;
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter') handleSend();
+    };
+
+    closeBtn.onclick = () => this.closeDialogue();
+    voiceBtn.onclick = () => {
+      const enabled = aiEngine.toggleVoice();
+      voiceBtn.innerText = enabled ? '🔊 Voice' : '🔇 Muted';
+      voiceBtn.classList.toggle('text-amber-300', enabled);
+      voiceBtn.classList.toggle('text-slate-400', !enabled);
+    };
+    keyBtn.onclick = () => {
+      const current = aiEngine.getApiKey();
+      const entered = window.prompt('Enter Google Gemini API Key (or leave blank for Procedural Semantic AI):', current);
+      if (entered !== null) {
+        aiEngine.setApiKey(entered);
+        this.showNotification(entered ? 'Gemini API Key Saved!' : 'Switched to Procedural Semantic AI', 'info');
+      }
+    };
+
+    input.focus();
+  }
+
+  async sendDialogueMessage(text, persona, aiEngine) {
+    const modal = this.container.querySelector('#ai-dialogue-modal');
+    if (!modal) return;
+    const msgBox = modal.querySelector('#dialogue-messages');
+
+    // Append Player Message
+    msgBox.innerHTML += `
+      <div class="flex justify-end">
+        <div class="p-3 bg-amber-500/20 border border-amber-500/30 rounded-xl max-w-[85%] text-amber-100">
+          <div class="text-[11px] font-mono text-amber-300 font-bold mb-1">Deity</div>
+          <p>${text}</p>
+        </div>
+      </div>
+    `;
+    msgBox.scrollTop = msgBox.scrollHeight;
+
+    // Loading indicator
+    const loadId = 'ai-loading-' + Date.now();
+    msgBox.innerHTML += `
+      <div id="${loadId}" class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl max-w-[85%] text-slate-400 italic text-xs">
+        ${persona.name} is formulating response...
+      </div>
+    `;
+    msgBox.scrollTop = msgBox.scrollHeight;
+
+    try {
+      const res = await aiEngine.generateResponse(persona.id, text);
+      const loadingEl = document.getElementById(loadId);
+      if (loadingEl) loadingEl.remove();
+
+      msgBox.innerHTML += `
+        <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl max-w-[85%] text-slate-200">
+          <div class="text-[11px] font-mono text-amber-400/90 font-bold mb-1">${persona.name}</div>
+          <p>${res.text}</p>
+        </div>
+      `;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    } catch (err) {
+      console.error(err);
+      const loadingEl = document.getElementById(loadId);
+      if (loadingEl) loadingEl.remove();
+    }
+  }
+
+  closeDialogue() {
+    const modal = this.container.querySelector('#ai-dialogue-modal');
+    if (modal) modal.classList.add('hidden');
+    this.isDialogueOpen = false;
+  }
+
+  // =========================================================================
+  // ASTRAL VOID LEVIATHAN BOSS HEALTH BAR
+  // =========================================================================
+  showBossHealthBar(name, hp, maxHp) {
+    const container = this.container.querySelector('#boss-hud-container');
+    if (!container) return;
+    container.classList.remove('hidden');
+    this.updateBossHealth(hp, maxHp);
+    const nameEl = container.querySelector('#boss-name');
+    if (nameEl) nameEl.innerText = name;
+  }
+
+  updateBossHealth(hp, maxHp) {
+    const container = this.container.querySelector('#boss-hud-container');
+    if (!container) return;
+    const bar = container.querySelector('#boss-hp-bar');
+    const val = container.querySelector('#boss-hp-val');
+    const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
+
+    if (bar) bar.style.width = `${pct}%`;
+    if (val) val.innerText = `${Math.round(hp)} / ${maxHp}`;
+  }
+
+  hideBossHealthBar() {
+    const container = this.container.querySelector('#boss-hud-container');
+    if (container) container.classList.add('hidden');
+  }
 }
+

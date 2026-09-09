@@ -17,6 +17,11 @@ import { CelestialHUD } from './ui/hud.js';
 import { audioSystem } from './audio/synth.js';
 import { CELESTIAL_REALMS } from './game/constants.js';
 import { CinematicShader } from './shaders/cinematic.js';
+import { ArchonAIEngine, ARCHON_PERSONAS } from './ai/archon_ai.js';
+import { EchoEidolon } from './world/eidolon.js';
+import { GenesisSandbox } from './world/sandbox.js';
+import { VoidLeviathan } from './world/boss.js';
+import { CosmicWeather } from './world/weather.js';
 
 class GameEngine {
   constructor() {
@@ -220,6 +225,24 @@ class GameEngine {
       this.hud,
       this.expanse
     );
+
+    // 7. Advanced Grand Cosmic Expansion Subsystems
+    this.aiEngine = new ArchonAIEngine(this);
+    this.eidolon = new EchoEidolon(this.scene, this.player, this.hud);
+    this.sandbox = new GenesisSandbox(this.scene, this.camera, this.expanse, this.hud, this.vfx);
+    this.boss = new VoidLeviathan(this.scene, this.vfx, this.hud);
+    this.weather = new CosmicWeather(this.scene, this.hud, this.player);
+
+    this.controller.aiEngine = this.aiEngine;
+    this.controller.sandbox = this.sandbox;
+    this.controller.boss = this.boss;
+    this.controller.weather = this.weather;
+    this.controller.eidolon = this.eidolon;
+
+    // Connect HUD callbacks
+    this.hud.callbacks.onToggleGenesis = () => this.sandbox.toggle();
+    this.hud.callbacks.onOpenEidolon = () => this.hud.openDialogue(ARCHON_PERSONAS.EIDOLON, this.aiEngine);
+    this.hud.bindGenesisEvents(this.sandbox);
   }
 
   shiftRealm(newRealm) {
@@ -328,7 +351,18 @@ class GameEngine {
       this.vfx.update(delta);
     }
 
-    // 6. Update HUD states (Divine Favor, Compass, Flight Telemetry)
+    // 6. Update Eidolon Companion, Void Leviathan Boss, and Cosmic Weather
+    if (this.eidolon) {
+      this.eidolon.update(delta, this.elapsedTime);
+    }
+    if (this.boss) {
+      this.boss.update(delta, this.elapsedTime, this.player ? this.player.position : null);
+    }
+    if (this.weather) {
+      this.weather.update(delta, this.elapsedTime);
+    }
+
+    // 7. Update HUD states (Divine Favor, Compass, Flight Telemetry)
     if (this.hud && this.player && this.controller) {
       this.hud.updateDivineFavor(this.player.divineFavor, this.player.maxDivineFavor);
       this.hud.updateCompass(this.controller.cameraYaw);

@@ -493,6 +493,157 @@ class CelestialAudio {
     const f = freqs[shrineId] || 659.25;
     this.playCrystalChime(f);
   }
+
+  // 9. Celestial Manta Mount Chime & Wing Flutter
+  playMantaMount() {
+    if (!this.ctx || this.isMuted) return;
+    this.resumeContext();
+    const t = this.ctx.currentTime;
+    // Harmonic arpeggio
+    [440, 554.37, 659.25, 880].forEach((freq, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t + i * 0.08);
+      gain.gain.setValueAtTime(0.15, t + i * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.5);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t + i * 0.08);
+      osc.stop(t + i * 0.08 + 0.55);
+    });
+  }
+
+  // 10. Manta Supersonic Turbo Boost
+  playMantaBoost() {
+    if (!this.ctx || this.isMuted) return;
+    this.resumeContext();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const filter = this.ctx.createBiquadFilter();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140, t);
+    osc.frequency.exponentialRampToValueAtTime(620, t + 0.4);
+    osc.frequency.exponentialRampToValueAtTime(220, t + 1.2);
+
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(400, t);
+    filter.frequency.linearRampToValueAtTime(2200, t + 0.3);
+    filter.Q.setValueAtTime(3.0, t);
+
+    gain.gain.setValueAtTime(0.35, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 1.25);
+  }
+
+  // 11. Deity Genesis World Fabrication Materialization Sound
+  playGenesisSpawn() {
+    if (!this.ctx || this.isMuted) return;
+    this.resumeContext();
+    const t = this.ctx.currentTime;
+    // Crystalline triad + deep tectonic thump
+    const oscThump = this.ctx.createOscillator();
+    const thumpGain = this.ctx.createGain();
+    oscThump.type = 'triangle';
+    oscThump.frequency.setValueAtTime(120, t);
+    oscThump.frequency.exponentialRampToValueAtTime(35, t + 0.45);
+    thumpGain.gain.setValueAtTime(0.4, t);
+    thumpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    oscThump.connect(thumpGain);
+    thumpGain.connect(this.sfxGain);
+    oscThump.start(t);
+    oscThump.stop(t + 0.55);
+
+    [783.99, 1046.5, 1318.51].forEach((f, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, t + i * 0.05);
+      gain.gain.setValueAtTime(0.18, t + i * 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.05 + 0.6);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t + i * 0.05);
+      osc.stop(t + i * 0.05 + 0.65);
+    });
+  }
+
+  // 12. Astral Void Leviathan Roar
+  playBossRoar() {
+    if (!this.ctx || this.isMuted) return;
+    this.resumeContext();
+    const t = this.ctx.currentTime;
+
+    const osc1 = this.ctx.createOscillator();
+    const osc2 = this.ctx.createOscillator();
+    const filter = this.ctx.createBiquadFilter();
+    const gain = this.ctx.createGain();
+
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(85, t);
+    osc1.frequency.linearRampToValueAtTime(240, t + 0.6);
+    osc1.frequency.exponentialRampToValueAtTime(50, t + 2.0);
+
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(88, t);
+    osc2.frequency.linearRampToValueAtTime(235, t + 0.6);
+    osc2.frequency.exponentialRampToValueAtTime(48, t + 2.0);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(600, t);
+    filter.frequency.linearRampToValueAtTime(2500, t + 0.5);
+    filter.frequency.exponentialRampToValueAtTime(300, t + 2.0);
+
+    gain.gain.setValueAtTime(0.01, t);
+    gain.gain.linearRampToValueAtTime(0.5, t + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 2.2);
+
+    osc1.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.sfxGain);
+
+    osc1.start(t);
+    osc2.start(t);
+    osc1.stop(t + 2.3);
+    osc2.stop(t + 2.3);
+  }
+
+  // 13. Dynamic Cosmic Weather Anomaly Sweep
+  playWeatherAnomaly() {
+    if (!this.ctx || this.isMuted) return;
+    this.resumeContext();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const filter = this.ctx.createBiquadFilter();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(220, t);
+    osc.frequency.exponentialRampToValueAtTime(880, t + 1.2);
+    osc.frequency.exponentialRampToValueAtTime(440, t + 2.5);
+
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(600, t);
+    filter.frequency.linearRampToValueAtTime(1600, t + 1.0);
+    filter.Q.setValueAtTime(4.0, t);
+
+    gain.gain.setValueAtTime(0.2, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 2.6);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 2.7);
+  }
 }
 
 export const audioSystem = new CelestialAudio();
