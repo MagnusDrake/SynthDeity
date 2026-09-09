@@ -571,8 +571,8 @@ export class AstralExpanse {
       abyssGlyphs: []
     };
 
-    this.initStargates();
     this.initSubRealms();
+    this.initStargates();
     this.initTrialEntities();
   }
 
@@ -641,7 +641,9 @@ export class AstralExpanse {
         isActive: false
       };
 
-      // Register interactive stargate
+      const targetDest = this.subRealmOrigins[r.dest] || { x: 1200, y: 300, z: 1200 };
+
+      // Register interactive stargate with resolved 3D coordinates
       this.interactiveObjects.push({
         id: `stargate_${r.dest}`,
         name: `Stargate: ${r.name}`,
@@ -650,7 +652,8 @@ export class AstralExpanse {
         interactRadius: 8,
         data: {
           isStargate: true,
-          destination: r.dest,
+          destination: { x: targetDest.x, y: targetDest.y, z: targetDest.z },
+          destinationKey: r.dest,
           realmKey: r.key,
           gateName: r.name
         },
@@ -690,9 +693,41 @@ export class AstralExpanse {
 
     // 1. THE CYBER MATRIX (Neon Grid & Floating Logic Monoliths)
     const m = this.subRealmOrigins.matrix;
+
+    // Sub-Realm Lighting: Emerald Neon & Cyan Glow
+    const matrixLight = new THREE.PointLight(0x10b981, 35, 450);
+    matrixLight.position.set(m.x, m.y + 25, m.z);
+    this.group.add(matrixLight);
+
+    const matrixFill = new THREE.PointLight(0x06b6d4, 20, 300);
+    matrixFill.position.set(m.x, m.y + 5, m.z);
+    this.group.add(matrixFill);
+
+    // Glowing Central Cyber Monolith
+    const monoGeo = new THREE.BoxGeometry(6, 45, 6);
+    const monoMat = new THREE.MeshStandardMaterial({
+      color: 0x064e3b,
+      emissive: 0x10b981,
+      emissiveIntensity: 0.8,
+      roughness: 0.1,
+      metalness: 0.9
+    });
+    const mono = new THREE.Mesh(monoGeo, monoMat);
+    mono.position.set(m.x, m.y + 22, m.z);
+    this.group.add(mono);
+
+    // Dark solid base beneath wireframe grid
+    const solidFloor = new THREE.Mesh(
+      new THREE.PlaneGeometry(240, 240),
+      new THREE.MeshStandardMaterial({ color: 0x022c22, roughness: 0.3, metalness: 0.7 })
+    );
+    solidFloor.rotation.x = -Math.PI / 2;
+    solidFloor.position.set(m.x, m.y - 0.2, m.z);
+    this.group.add(solidFloor);
+
     const matrixFloor = new THREE.Mesh(
-      new THREE.PlaneGeometry(160, 160, 16, 16),
-      new THREE.MeshBasicMaterial({ color: 0x064e3b, wireframe: true })
+      new THREE.PlaneGeometry(240, 240, 24, 24),
+      new THREE.MeshBasicMaterial({ color: 0x10b981, wireframe: true })
     );
     matrixFloor.rotation.x = -Math.PI / 2;
     matrixFloor.position.set(m.x, m.y, m.z);
@@ -705,7 +740,7 @@ export class AstralExpanse {
       const pz = m.z + Math.sin(pAngle) * 45;
       const pyr = new THREE.Mesh(
         new THREE.TetrahedronGeometry(6, 0),
-        new THREE.MeshBasicMaterial({ color: 0x10b981, wireframe: true })
+        new THREE.MeshBasicMaterial({ color: 0x34d399, wireframe: true })
       );
       pyr.position.set(px, m.y + 12, pz);
       this.group.add(pyr);
@@ -717,17 +752,33 @@ export class AstralExpanse {
       });
     }
     this.createReturnStargate(m.x, m.y, m.z - 25, 0x10b981, 'TITAN');
-    this.landmasses.push({ x: m.x, y: m.y, z: m.z, radius: 75, topY: m.y });
+    this.landmasses.push({ x: m.x, y: m.y, z: m.z, radius: 110, topY: m.y });
 
     // 2. THE ASTEROID NEBULA (Zero-G Asteroid Field)
     const ast = this.subRealmOrigins.asteroids;
-    const astPlatform = this.createCragIsland(ast.x, ast.y, ast.z, 30, 20, 'rock');
+
+    // Sub-Realm Lighting: Violet & Magenta Cosmic Glow
+    const astLight = new THREE.PointLight(0xc084fc, 40, 500);
+    astLight.position.set(ast.x, ast.y + 35, ast.z);
+    this.group.add(astLight);
+
+    const astDir = new THREE.DirectionalLight(0xe879f9, 2.5);
+    astDir.position.set(ast.x + 50, ast.y + 80, ast.z + 50);
+    this.group.add(astDir);
+
+    const astPlatform = this.createCragIsland(ast.x, ast.y, ast.z, 36, 20, 'rock');
     for (let i = 0; i < 18; i++) {
       const a = (i / 18) * Math.PI * 2;
       const r = 40 + (i % 3) * 15;
       const asteroid = new THREE.Mesh(
         new THREE.DodecahedronGeometry(3 + Math.random() * 3),
-        new THREE.MeshStandardMaterial({ color: 0x7e22ce, roughness: 0.6, metalness: 0.3 })
+        new THREE.MeshStandardMaterial({
+          color: 0x7e22ce,
+          emissive: 0x3b0764,
+          emissiveIntensity: 0.4,
+          roughness: 0.5,
+          metalness: 0.5
+        })
       );
       asteroid.position.set(ast.x + Math.cos(a) * r, ast.y + (Math.random() - 0.5) * 35, ast.z + Math.sin(a) * r);
       this.group.add(asteroid);
@@ -742,10 +793,20 @@ export class AstralExpanse {
 
     // 3. THE CHRONAL ATRIUM (Clockwork Dials & Rings)
     const ch = this.subRealmOrigins.chronos;
-    const chronPlatform = this.createCragIsland(ch.x, ch.y, ch.z, 32, 24, 'marble');
+
+    // Sub-Realm Lighting: Cyan Temporal Glow & Solar Gold
+    const chLight = new THREE.PointLight(0x38bdf8, 45, 500);
+    chLight.position.set(ch.x, ch.y + 35, ch.z);
+    this.group.add(chLight);
+
+    const chGold = new THREE.PointLight(0xfacc15, 25, 300);
+    chGold.position.set(ch.x, ch.y + 12, ch.z);
+    this.group.add(chGold);
+
+    const chronPlatform = this.createCragIsland(ch.x, ch.y, ch.z, 38, 24, 'marble');
     // Giant rotating dial
     const dial = new THREE.Mesh(
-      new THREE.RingGeometry(8, 22, 24),
+      new THREE.RingGeometry(8, 26, 32),
       new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, side: THREE.DoubleSide })
     );
     dial.rotation.x = -Math.PI / 2;
@@ -758,7 +819,13 @@ export class AstralExpanse {
 
     // 4. THE EVENT HORIZON (Gravitational Lens Chamber)
     const s = this.subRealmOrigins.singularity;
-    const singPlatform = this.createCragIsland(s.x, s.y, s.z, 34, 25, 'rune');
+
+    // Sub-Realm Lighting: Emerald Void Glow & Accretion Flare
+    const singLight = new THREE.PointLight(0x10b981, 45, 500);
+    singLight.position.set(s.x, s.y + 30, s.z);
+    this.group.add(singLight);
+
+    const singPlatform = this.createCragIsland(s.x, s.y, s.z, 40, 25, 'rune');
     const colossalBlackHole = new THREE.Mesh(
       new THREE.SphereGeometry(18, 32, 32),
       new THREE.MeshBasicMaterial({ color: 0x000000 })
@@ -766,9 +833,13 @@ export class AstralExpanse {
     colossalBlackHole.position.set(s.x, s.y + 25, s.z + 55);
     this.group.add(colossalBlackHole);
 
+    const flareLight = new THREE.PointLight(0x34d399, 35, 350);
+    flareLight.position.copy(colossalBlackHole.position);
+    this.group.add(flareLight);
+
     const colossalRing = new THREE.Mesh(
       new THREE.TorusGeometry(32, 1.2, 8, 48),
-      new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending })
+      new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending })
     );
     colossalRing.position.copy(colossalBlackHole.position);
     colossalRing.rotation.x = Math.PI / 3;
@@ -969,6 +1040,20 @@ export class AstralExpanse {
         }
       });
     });
+  }
+
+  // Determines ground elevation for all open world archipelagos and sub-realms
+  getFloorHeight(x, z) {
+    if (!this.landmasses) return null;
+    for (let i = 0; i < this.landmasses.length; i++) {
+      const lm = this.landmasses[i];
+      const dx = x - lm.x;
+      const dz = z - lm.z;
+      if (dx * dx + dz * dz <= lm.radius * lm.radius) {
+        return lm.topY;
+      }
+    }
+    return null;
   }
 
   update(delta, elapsed) {

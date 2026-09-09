@@ -43,14 +43,14 @@ class GameEngine {
     this.currentRealm = CELESTIAL_REALMS.DAWN;
 
     this.scene.background = new THREE.Color(this.currentRealm.skyColor);
-    this.scene.fog = new THREE.FogExp2(this.currentRealm.fogColor, 0.0035);
+    this.scene.fog = new THREE.FogExp2(this.currentRealm.fogColor, 0.0006);
 
-    // Camera setup
+    // Camera setup with deep cosmic view distance (4000m)
     this.camera = new THREE.PerspectiveCamera(
       60,
       window.innerWidth / window.innerHeight,
       0.1,
-      1200
+      4000
     );
     this.camera.position.set(0, 10, 18);
 
@@ -80,8 +80,8 @@ class GameEngine {
       this.scene.environment = envMap;
       pmremGenerator.dispose();
 
-      // Cosmic Panorama Sky Dome (radius: 900)
-      const skyGeo = new THREE.SphereGeometry(900, 48, 32);
+      // Cosmic Panorama Sky Dome (follows camera, radius: 3200)
+      const skyGeo = new THREE.SphereGeometry(3200, 48, 32);
       const skyMat = new THREE.MeshBasicMaterial({
         map: texture,
         side: THREE.BackSide,
@@ -317,8 +317,9 @@ class GameEngine {
       this.expanse.update(delta, this.elapsedTime);
     }
 
-    // 4. Update Sky Dome slow cosmic rotation
+    // 4. Update Sky Dome position to follow camera & slow cosmic rotation
     if (this.skyDome) {
+      this.skyDome.position.copy(this.camera.position);
       this.skyDome.rotation.y += delta * 0.003;
     }
 

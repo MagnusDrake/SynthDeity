@@ -580,19 +580,45 @@ export class GameController {
 
   warpToSubRealm(destination, gateName) {
     if (this.isCinematicTransition) return;
+
+    // Resolve destination coordinates safely
+    let targetPos = destination;
+    if (!targetPos || typeof targetPos.x !== 'number') {
+      const subRealmMap = {
+        matrix: { x: 1200, y: 300, z: 1200 },
+        asteroids: { x: -1200, y: 300, z: 1200 },
+        chronos: { x: 1200, y: 300, z: -1200 },
+        singularity: { x: -1200, y: 300, z: -1200 }
+      };
+      if (typeof destination === 'string' && subRealmMap[destination]) {
+        targetPos = subRealmMap[destination];
+      } else if (this.expanse && this.expanse.subRealmOrigins && this.expanse.subRealmOrigins[destination]) {
+        targetPos = this.expanse.subRealmOrigins[destination];
+      } else {
+        targetPos = { x: 1200, y: 300, z: 1200 };
+      }
+    }
+
+    const spawnX = targetPos.x;
+    const spawnY = targetPos.y + 2.0;
+    const spawnZ = targetPos.z + 16;
+
     audioSystem.playStargateWarp();
     this.vfx.triggerDivineSmite(this.player.position);
     this.addCameraShake(0.6);
 
     if (this.hud) {
-      this.hud.showNotification(`🌀 Wormhole Traverse: Entering ${gateName}...`, 'info');
+      this.hud.showNotification(`🌀 Wormhole Traverse: Entering ${gateName || 'Sub-Realm'}...`, 'info');
     }
+
+    this.cameraYaw = 0;
+    this.cameraPitch = 0.25;
 
     this.isCinematicTransition = true;
     gsap.to(this.player.position, {
-      x: destination.x,
-      y: destination.y + 2.0,
-      z: destination.z,
+      x: spawnX,
+      y: spawnY,
+      z: spawnZ,
       duration: 1.2,
       ease: 'power2.inOut',
       onComplete: () => {
@@ -604,9 +630,9 @@ export class GameController {
     });
 
     const camTarget = new THREE.Vector3(
-      destination.x + Math.sin(this.cameraYaw) * this.cameraDistance,
-      destination.y + 4.0,
-      destination.z + Math.cos(this.cameraYaw) * this.cameraDistance
+      spawnX + Math.sin(this.cameraYaw) * this.cameraDistance,
+      spawnY + 4.5,
+      spawnZ + Math.cos(this.cameraYaw) * this.cameraDistance
     );
     gsap.to(this.camera.position, {
       x: camTarget.x,
@@ -639,7 +665,7 @@ export class GameController {
     this.isCinematicTransition = true;
     gsap.to(this.player.position, {
       x: dest.x,
-      y: dest.y,
+      y: dest.y + 2.5,
       z: dest.z,
       duration: 1.2,
       ease: 'power2.inOut',
@@ -653,7 +679,7 @@ export class GameController {
 
     const camTarget = new THREE.Vector3(
       dest.x + Math.sin(this.cameraYaw) * this.cameraDistance,
-      dest.y + 4.0,
+      dest.y + 4.5,
       dest.z + Math.cos(this.cameraYaw) * this.cameraDistance
     );
     gsap.to(this.camera.position, {
