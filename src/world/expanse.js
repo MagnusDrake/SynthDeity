@@ -1,6 +1,7 @@
 // The Astral Expanse: Open-World Celestial Archipelagos & Ancient Titan Ruins
 import * as THREE from 'three';
 import { ASTRAL_OBELISKS } from '../game/constants.js';
+import { proceduralMaterials } from './materials.js';
 
 export class AstralExpanse {
   constructor(scene) {
@@ -21,22 +22,13 @@ export class AstralExpanse {
   }
 
   initTextures() {
-    const loader = new THREE.TextureLoader();
+    this.crystalRockSuite = proceduralMaterials.createCrystalRockSuite(1024);
+    this.runeSlateSuite = proceduralMaterials.createRuneSlateSuite(1024);
+    this.goldMarbleSuite = proceduralMaterials.createGoldMarbleSuite(1024);
 
-    this.crystalRockTex = loader.load('/textures/aether_crystal_rock.jpg');
-    this.crystalRockTex.wrapS = THREE.RepeatWrapping;
-    this.crystalRockTex.wrapT = THREE.RepeatWrapping;
-    this.crystalRockTex.repeat.set(3, 3);
-
-    this.runeSlateTex = loader.load('/textures/astral_rune_slate.jpg');
-    this.runeSlateTex.wrapS = THREE.RepeatWrapping;
-    this.runeSlateTex.wrapT = THREE.RepeatWrapping;
-    this.runeSlateTex.repeat.set(2, 2);
-
-    this.goldMarbleTex = loader.load('/textures/celestial_gold_marble.jpg');
-    this.goldMarbleTex.wrapS = THREE.RepeatWrapping;
-    this.goldMarbleTex.wrapT = THREE.RepeatWrapping;
-    this.goldMarbleTex.repeat.set(2, 2);
+    this.crystalRockTex = this.crystalRockSuite.map;
+    this.runeSlateTex = this.runeSlateSuite.map;
+    this.goldMarbleTex = this.goldMarbleSuite.map;
   }
 
   createCragIsland(x, y, z, radius, depth = 16, materialType = 'rock') {
@@ -48,21 +40,34 @@ export class AstralExpanse {
     let topMat;
     if (materialType === 'marble') {
       topMat = new THREE.MeshStandardMaterial({
-        map: this.goldMarbleTex,
-        roughness: 0.3,
-        metalness: 0.15
+        map: this.goldMarbleSuite.map,
+        normalMap: this.goldMarbleSuite.normalMap,
+        roughnessMap: this.goldMarbleSuite.roughnessMap,
+        metalnessMap: this.goldMarbleSuite.metalnessMap,
+        normalScale: this.goldMarbleSuite.normalScale,
+        roughness: 0.28,
+        metalness: 0.22
       });
     } else if (materialType === 'rune') {
       topMat = new THREE.MeshStandardMaterial({
-        map: this.runeSlateTex,
-        roughness: 0.4,
-        metalness: 0.3
+        map: this.runeSlateSuite.map,
+        normalMap: this.runeSlateSuite.normalMap,
+        roughnessMap: this.runeSlateSuite.roughnessMap,
+        metalnessMap: this.runeSlateSuite.metalnessMap,
+        emissiveMap: this.runeSlateSuite.emissiveMap,
+        emissive: this.runeSlateSuite.emissive,
+        emissiveIntensity: this.runeSlateSuite.emissiveIntensity,
+        normalScale: this.runeSlateSuite.normalScale,
+        roughness: 0.35,
+        metalness: 0.35
       });
     } else {
       topMat = new THREE.MeshStandardMaterial({
-        map: this.crystalRockTex,
-        roughness: 0.6,
-        metalness: 0.2
+        map: this.crystalRockSuite.map,
+        normalMap: this.crystalRockSuite.normalMap,
+        normalScale: this.crystalRockSuite.normalScale,
+        roughness: this.crystalRockSuite.roughness,
+        metalness: this.crystalRockSuite.metalness
       });
     }
 

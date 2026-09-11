@@ -1,6 +1,8 @@
 // 3D Procedural World & Architecture for AETHELGARD
 import * as THREE from 'three';
 import { SHRINES } from '../game/constants.js';
+import { proceduralMaterials } from './materials.js';
+import { AstralEtherPool } from './water.js';
 
 export class CelestialCitadel {
   constructor(scene) {
@@ -8,6 +10,7 @@ export class CelestialCitadel {
     this.interactiveObjects = []; // Items player can attune with
     this.animatedObjects = [];    // Items to tick in render loop
     this.projectRelics = [];      // 3D relics for Vault of Creations
+    this.etherPool = null;
 
     this.initTextures();
     this.initEnvironment();
@@ -20,16 +23,10 @@ export class CelestialCitadel {
   }
 
   initTextures() {
-    const loader = new THREE.TextureLoader();
-    this.marbleTex = loader.load('/textures/celestial_gold_marble.jpg');
-    this.marbleTex.wrapS = THREE.RepeatWrapping;
-    this.marbleTex.wrapT = THREE.RepeatWrapping;
-    this.marbleTex.repeat.set(3, 3);
-
-    this.runeTex = loader.load('/textures/astral_rune_slate.jpg');
-    this.runeTex.wrapS = THREE.RepeatWrapping;
-    this.runeTex.wrapT = THREE.RepeatWrapping;
-    this.runeTex.repeat.set(2, 2);
+    this.goldMarbleSuite = proceduralMaterials.createGoldMarbleSuite(1024);
+    this.runeSlateSuite = proceduralMaterials.createRuneSlateSuite(1024);
+    this.marbleTex = this.goldMarbleSuite.map;
+    this.runeTex = this.runeSlateSuite.map;
   }
 
   initEnvironment() {
@@ -205,12 +202,16 @@ export class CelestialCitadel {
   createFloatingIsland(radius, height = 5) {
     const island = new THREE.Group();
 
-    // Upper dais with sacred celestial white & gold marble
+    // Upper dais with sacred celestial white & gold marble (PBR Normal & Roughness)
     const topGeo = new THREE.CylinderGeometry(radius, radius * 0.96, 1.2, 36);
     const topMat = new THREE.MeshStandardMaterial({
-      map: this.marbleTex || this.createSacredFloorTexture(),
+      map: this.goldMarbleSuite ? this.goldMarbleSuite.map : this.createSacredFloorTexture(),
+      normalMap: this.goldMarbleSuite ? this.goldMarbleSuite.normalMap : null,
+      roughnessMap: this.goldMarbleSuite ? this.goldMarbleSuite.roughnessMap : null,
+      metalnessMap: this.goldMarbleSuite ? this.goldMarbleSuite.metalnessMap : null,
+      normalScale: this.goldMarbleSuite ? this.goldMarbleSuite.normalScale : new THREE.Vector2(1.2, 1.2),
       roughness: 0.28,
-      metalness: 0.15
+      metalness: 0.22
     });
     const topMesh = new THREE.Mesh(topGeo, topMat);
     topMesh.position.y = -0.6;
@@ -249,14 +250,38 @@ export class CelestialCitadel {
     const central = this.createFloatingIsland(22, 6);
     this.scene.add(central);
 
+    // Liquid Astral Ether Reflecting Pool with Procedural Voronoi Caustics
+    this.etherPool = new AstralEtherPool(13.8, 8.8);
+    this.etherPool.mesh.position.y = 0.02;
+    central.add(this.etherPool.mesh);
+
+    // Decorative Golden Pool Lip Rims
+    const poolLipMat = new THREE.MeshStandardMaterial({
+      color: 0xffd700,
+      roughness: 0.15,
+      metalness: 0.92
+    });
+    const innerRim = new THREE.Mesh(new THREE.TorusGeometry(5.0, 0.12, 8, 36), poolLipMat);
+    innerRim.rotateX(Math.PI / 2);
+    innerRim.position.y = 0.04;
+    central.add(innerRim);
+
+    const outerRim = new THREE.Mesh(new THREE.TorusGeometry(13.8, 0.15, 8, 36), poolLipMat);
+    outerRim.rotateX(Math.PI / 2);
+    outerRim.position.y = 0.04;
+    central.add(outerRim);
+
     // Central Divine Nexus: Levitating Crystal Spire
     const nexusGroup = new THREE.Group();
     nexusGroup.position.set(0, 0, 0);
 
     // Center Pedestal
     const pedGeo = new THREE.CylinderGeometry(3.5, 4.5, 1.8, 8);
-    const pedMat = new THREE.MeshBasicMaterial({
-      color: 0x334155
+    const pedMat = new THREE.MeshStandardMaterial({
+      map: this.runeSlateSuite ? this.runeSlateSuite.map : null,
+      normalMap: this.runeSlateSuite ? this.runeSlateSuite.normalMap : null,
+      roughness: 0.35,
+      metalness: 0.4
     });
     const pedestal = new THREE.Mesh(pedGeo, pedMat);
     pedestal.position.y = 0.9;
@@ -354,8 +379,12 @@ export class CelestialCitadel {
     // The causeways span from D=21.75 to D=30.25, perfectly bridging the open space with zero intrusion or Z-fighting.
 
     const deckMat = new THREE.MeshStandardMaterial({
-      map: this.runeTex,
-      roughness: 0.35,
+      map: this.runeSlateSuite ? this.runeSlateSuite.map : this.runeTex,
+      normalMap: this.runeSlateSuite ? this.runeSlateSuite.normalMap : null,
+      roughnessMap: this.runeSlateSuite ? this.runeSlateSuite.roughnessMap : null,
+      metalnessMap: this.runeSlateSuite ? this.runeSlateSuite.metalnessMap : null,
+      normalScale: this.runeSlateSuite ? this.runeSlateSuite.normalScale : new THREE.Vector2(1.2, 1.2),
+      roughness: 0.32,
       metalness: 0.35
     });
 
@@ -1054,6 +1083,11 @@ export class CelestialCitadel {
   }
 
   update(delta, elapsed) {
+    // Tick liquid ether reflecting pool caustics
+    if (this.etherPool) {
+      this.etherPool.update(delta, elapsed);
+    }
+
     // Tick starfield slight rotation
     if (this.starfield) {
       this.starfield.rotation.y += delta * 0.008;

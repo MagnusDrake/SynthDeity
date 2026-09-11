@@ -36,10 +36,14 @@ export class CelestialPlayer {
     this.trailPositions = [];
     this.windLines = null;
     this.lightPoint = null;
+    this.auraMesh = null;
+    this.auraUniforms = null;
+    this.groundRipples = [];
 
     this.initMesh();
     this.initParticles();
     this.initWindParticles();
+    this.initGroundRipples();
     this.scene.add(this.mesh);
 
     // Initial position on the central sanctuary platform
@@ -82,6 +86,50 @@ export class CelestialPlayer {
     });
     const innerMesh = new THREE.Mesh(innerGeo, innerMat);
     this.coreMesh.add(innerMesh);
+
+    // Seraphic Fresnel Rim Aura (Cosmic golden-cyan radiance)
+    const auraGeo = new THREE.IcosahedronGeometry(0.88, 3);
+    this.auraUniforms = {
+      uTime: { value: 0 },
+      uIntensity: { value: 1.0 },
+      uColorCore: { value: new THREE.Color(0xffd700) },
+      uColorRim: { value: new THREE.Color(0x38bdf8) }
+    };
+    const auraMat = new THREE.ShaderMaterial({
+      uniforms: this.auraUniforms,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      side: THREE.BackSide,
+      depthWrite: false,
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vViewPos;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+          vViewPos = -mvPos.xyz;
+          gl_Position = projectionMatrix * mvPos;
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        uniform float uIntensity;
+        uniform vec3 uColorCore;
+        uniform vec3 uColorRim;
+        varying vec3 vNormal;
+        varying vec3 vViewPos;
+        void main() {
+          vec3 n = normalize(vNormal);
+          vec3 v = normalize(vViewPos);
+          float fresnel = pow(1.0 - max(0.0, dot(v, n)), 2.8);
+          float pulse = 0.85 + 0.15 * sin(uTime * 4.0);
+          vec3 col = mix(uColorCore, uColorRim, fresnel);
+          gl_FragColor = vec4(col * fresnel * pulse * uIntensity, fresnel * 0.9 * uIntensity);
+        }
+      `
+    });
+    this.auraMesh = new THREE.Mesh(auraGeo, auraMat);
+    this.coreMesh.add(this.auraMesh);
 
     // 2. Kinetic Astrolabe Golden Rings (High-metal PBR reflections)
     const ringMat = new THREE.MeshStandardMaterial({
@@ -266,6 +314,56 @@ export class CelestialPlayer {
     // Initialize position history
     for (let i = 0; i < pCount; i++) {
       this.trailPositions.push(this.position.clone());
+    }
+  }
+
+  initGroundRipples() {
+    this.groundRipples = [];
+    const rippleGeo = new THREE.RingGeometry(0.4, 0.58, 32);
+    rippleGeo.rotateX(-Math.PI / 2);
+
+    for (let i = 0; i < 3; i++) {
+      const rippleMat = new THREE.MeshBasicMaterial({
+        color: 0xfde047,
+        transparent: true,
+        opacity: 0.0,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const rMesh = new THREE.Mesh(rippleGeo, rippleMat);
+      this.scene.add(rMesh);
+      this.groundRipples.push({
+        mesh: rMesh,
+        phase: i * 0.33,
+        speed: 0.75
+      });
+    }
+  }
+
+  updateGroundRipples(delta, floorY) {
+    if (!this.groundRipples || this.groundRipples.length === 0) return;
+
+    const altDiff = this.position.y - floorY;
+    const isClose = altDiff >= -0.5 && altDiff < 7.0 && floorY > -50;
+    const proximityFactor = isClose ? Math.max(0.0, 1.0 - (altDiff / 7.0)) : 0.0;
+
+    for (let i = 0; i < this.groundRipples.length; i++) {
+      const r = this.groundRipples[i];
+      r.phase = (r.phase + delta * r.speed) % 1.0;
+
+      if (proximityFactor > 0.01) {
+        r.mesh.visible = true;
+        const scale = 1.0 + r.phase * 5.2;
+        r.mesh.scale.set(scale, 1, scale);
+        r.mesh.position.set(this.position.x, floorY + 0.08, this.position.z);
+        // Fade out as it expands
+        const fade = Math.sin(r.phase * Math.PI) * proximityFactor * 0.55;
+        r.mesh.material.opacity = fade;
+      } else {
+        r.mesh.visible = false;
+        r.mesh.material.opacity = 0.0;
+      }
     }
   }
 
@@ -479,6 +577,21 @@ export class CelestialPlayer {
 
     // 5. Update Stardust Trail Particles
     this.updateParticles(delta, true);
+
+    // 6. Update Seraphic Fresnel Rim Aura
+    if (this.auraUniforms) {
+      this.auraUniforms.uTime.value += delta;
+      const targetIntensity = (this.isFlying || isSprinting) ? 1.85 : 1.05;
+      this.auraUniforms.uIntensity.value = THREE.MathUtils.lerp(
+        this.auraUniforms.uIntensity.value,
+        targetIntensity,
+        delta * 5.0
+      );
+    }
+
+    // 7. Update Ground Attunement Ripples
+    const curFloorY = this.getFloorHeight(this.position.x, this.position.z);
+    this.updateGroundRipples(delta, curFloorY);
   }
 
   // Determines ground elevation for sanctuary, open world expanse islands, and ley-line light bridges

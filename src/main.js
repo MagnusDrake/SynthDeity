@@ -16,6 +16,7 @@ import { GameController } from './game/controller.js';
 import { CelestialHUD } from './ui/hud.js';
 import { audioSystem } from './audio/synth.js';
 import { CELESTIAL_REALMS } from './game/constants.js';
+import { LivingNebulaSky } from './shaders/nebula.js';
 import { CinematicShader } from './shaders/cinematic.js';
 import { ArchonAIEngine, ARCHON_PERSONAS } from './ai/archon_ai.js';
 import { EchoEidolon } from './world/eidolon.js';
@@ -60,14 +61,15 @@ class GameEngine {
     this.camera.position.set(0, 10, 18);
 
     // WebGL Renderer with Soft Shadow Mapping
+    const pixelRatio = Math.min(window.devicePixelRatio, 2);
     this.renderer = new THREE.WebGLRenderer({
       powerPreference: 'high-performance',
       antialias: true
     });
+    this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.18;
+    this.renderer.toneMappingExposure = 1.05;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -75,26 +77,10 @@ class GameEngine {
   }
 
   initEnvironmentMap() {
-    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
-    pmremGenerator.compileEquirectangularShader();
-
-    const loader = new THREE.TextureLoader();
-    loader.load('/textures/cosmic_nebula_sky.jpg', (texture) => {
-      texture.mapping = THREE.EquirectangularReflectionMapping;
-      const envMap = pmremGenerator.fromEquirectangular(texture).texture;
-      this.scene.environment = envMap;
-      pmremGenerator.dispose();
-
-      // Cosmic Panorama Sky Dome (follows camera, radius: 3200)
-      const skyGeo = new THREE.SphereGeometry(3200, 48, 32);
-      const skyMat = new THREE.MeshBasicMaterial({
-        map: texture,
-        side: THREE.BackSide,
-        depthWrite: false
-      });
-      this.skyDome = new THREE.Mesh(skyGeo, skyMat);
-      this.scene.add(this.skyDome);
-    });
+    // Living Procedural 3D Volumetric Nebula Sky Dome (3200m radius)
+    this.livingSky = new LivingNebulaSky(3200);
+    this.scene.add(this.livingSky.mesh);
+    this.skyDome = this.livingSky.mesh;
   }
 
   initLights() {
@@ -125,19 +111,23 @@ class GameEngine {
   initPostProcessing() {
     // Setup Unreal Bloom for divine glowing runes and aura
     this.composer = new EffectComposer(this.renderer);
+    const pixelRatio = Math.min(window.devicePixelRatio, 2);
+    this.composer.setPixelRatio(pixelRatio);
+    this.composer.setSize(window.innerWidth, window.innerHeight);
+
     const renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(renderPass);
 
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.82,  // strength
+      0.55,  // strength
       0.35,  // radius
-      0.90   // threshold (only truly glowing emissive surfaces bloom)
+      0.88   // threshold (only truly glowing emissive surfaces bloom)
     );
     this.bloomPass = bloomPass;
     this.composer.addPass(bloomPass);
 
-    // Consolidated Filmic Pass: 35mm grain, anamorphic vignette & chromatic aberration
+    // Consolidated Deluxe Filmic & Volumetric Pass: Crepuscular God Rays, ACES Tonemapping, anamorphic streaks, split toning & 35mm grain
     this.cinematicPass = new ShaderPass(CinematicShader);
     this.cinematicPass.uniforms.uAspect.value = window.innerWidth / window.innerHeight;
     this.composer.addPass(this.cinematicPass);
@@ -285,6 +275,21 @@ class GameEngine {
       strength: newRealm.bloomIntensity,
       duration: 1.5
     });
+
+    if (this.livingSky) {
+      gsap.to(this.livingSky.uniforms.uColorCore.value, {
+        r: sunTarget.r,
+        g: sunTarget.g,
+        b: sunTarget.b,
+        duration: 1.5
+      });
+      gsap.to(this.livingSky.uniforms.uColorRim.value, {
+        r: skyTarget.r,
+        g: skyTarget.g,
+        b: skyTarget.b,
+        duration: 1.5
+      });
+    }
   }
 
   initEventListeners() {
@@ -299,13 +304,15 @@ class GameEngine {
   onWindowResize() {
     const width = window.innerWidth;
     const height = window.innerHeight;
+    const pixelRatio = Math.min(window.devicePixelRatio, 2);
 
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
 
+    this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+    this.composer.setPixelRatio(pixelRatio);
     this.composer.setSize(width, height);
 
     if (this.cinematicPass) {
@@ -340,10 +347,29 @@ class GameEngine {
       this.expanse.update(delta, this.elapsedTime);
     }
 
-    // 4. Update Sky Dome position to follow camera & slow cosmic rotation
-    if (this.skyDome) {
-      this.skyDome.position.copy(this.camera.position);
-      this.skyDome.rotation.y += delta * 0.003;
+    // 4. Update Living Nebula Sky Dome (follows camera & evolves gases)
+    if (this.livingSky) {
+      this.livingSky.update(delta, this.elapsedTime, this.camera.position);
+    }
+
+    // 5. Update Volumetric Crepuscular Ray (God Rays) Screen-Space Light Projection
+    if (this.cinematicPass && this.sunLight) {
+      const camDir = new THREE.Vector3();
+      this.camera.getWorldDirection(camDir);
+      const toLight = this.sunLight.position.clone().sub(this.camera.position).normalize();
+      const isFacing = camDir.dot(toLight) > 0.05;
+
+      if (isFacing) {
+        const lightPos = this.sunLight.position.clone();
+        const proj = lightPos.project(this.camera);
+        const screenX = (proj.x + 1.0) * 0.5;
+        const screenY = (proj.y + 1.0) * 0.5;
+        this.cinematicPass.uniforms.uLightScreenPos.value.set(screenX, screenY);
+        this.cinematicPass.uniforms.uLightInView.value = 1.0;
+        this.cinematicPass.uniforms.uLightColor.value.copy(this.sunLight.color);
+      } else {
+        this.cinematicPass.uniforms.uLightInView.value = 0.0;
+      }
     }
 
     // 5. Update VFX (Lightning, Shockwaves, Particles)
