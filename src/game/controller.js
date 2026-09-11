@@ -350,6 +350,39 @@ export class GameController {
     }
   }
 
+  // Resolve aim target ground position adhering to local platform / expanse elevation
+  getTargetGroundPosition(forwardDistance = 10) {
+    const heading = this.player.rotation.y;
+    const tx = this.player.position.x + Math.sin(heading) * forwardDistance;
+    const tz = this.player.position.z + Math.cos(heading) * forwardDistance;
+
+    // 1. Query elevation at the exact target location
+    let targetFloor = null;
+    if (this.player && typeof this.player.getFloorHeight === 'function') {
+      targetFloor = this.player.getFloorHeight(tx, tz);
+    }
+
+    let ty;
+    // Real platform or ley-line walkway (not deep cosmic void <= -50)
+    if (targetFloor !== null && targetFloor > -50) {
+      ty = targetFloor;
+    } else {
+      // 2. Fallback to the platform floor under the player's current feet
+      const playerFloor = (this.player && typeof this.player.getFloorHeight === 'function')
+        ? this.player.getFloorHeight(this.player.position.x, this.player.position.z)
+        : null;
+
+      if (playerFloor !== null && playerFloor > -50) {
+        ty = playerFloor;
+      } else {
+        // 3. True aerial flight or open abyss: project at player's base elevation
+        ty = this.player.position.y - 2.0;
+      }
+    }
+
+    return new THREE.Vector3(tx, ty, tz);
+  }
+
   // Cast Divine Smite power [Q]
   castDivineSmite() {
     if (this.player.divineFavor < 20) {
@@ -362,13 +395,8 @@ export class GameController {
     audioSystem.playSubBassImpact();
     this.addCameraShake(0.85);
 
-    // Strike 10 units ahead of player orientation
-    const heading = this.player.rotation.y;
-    const target = new THREE.Vector3(
-      this.player.position.x + Math.sin(heading) * 10,
-      this.player.position.y,
-      this.player.position.z + Math.cos(heading) * 10
-    );
+    // Dynamic ground target adhering to platform elevation
+    const target = this.getTargetGroundPosition(10);
 
     this.vfx.triggerDivineSmite(target);
     if (this.hud) this.hud.showNotification('⚡ Celestial Smite Unleashed!', 'success');
@@ -394,12 +422,7 @@ export class GameController {
     audioSystem.playMeteorTremor();
     this.addCameraShake(0.75);
 
-    const heading = this.player.rotation.y;
-    const target = new THREE.Vector3(
-      this.player.position.x + Math.sin(heading) * 16,
-      this.player.position.y,
-      this.player.position.z + Math.cos(heading) * 16
-    );
+    const target = this.getTargetGroundPosition(16);
 
     this.vfx.triggerMeteorTremor(target);
     if (this.hud) this.hud.showNotification('☄️ Meteor Tremor Unleashed!', 'success');
@@ -481,12 +504,7 @@ export class GameController {
     audioSystem.playSingularityVortex();
     this.addCameraShake(0.6);
 
-    const heading = this.player.rotation.y;
-    const target = new THREE.Vector3(
-      this.player.position.x + Math.sin(heading) * 18,
-      this.player.position.y + 1,
-      this.player.position.z + Math.cos(heading) * 18
-    );
+    const target = this.getTargetGroundPosition(18);
 
     this.vfx.triggerSingularityVortex(target);
     if (this.hud) this.hud.showNotification('🌌 Singularity Vortex Spawned!', 'success');

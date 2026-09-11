@@ -53,9 +53,10 @@ export class CelestialVFX {
 
   // Cast Divine Smite: Vertical lightning bolt from heaven + shockwave ring + spark burst
   triggerDivineSmite(targetPos) {
-    const originY = 70;
-    const endPos = targetPos.clone();
-    endPos.y = 0.1;
+    const groundY = (targetPos && typeof targetPos.y === 'number') ? targetPos.y : 0;
+    const endPos = targetPos ? targetPos.clone() : new THREE.Vector3();
+    endPos.y = groundY;
+    const originY = groundY + 70; // Dynamic lightning descent from 70 units above platform
 
     // 1. Procedural Zigzag Lightning Bolt
     const segments = 16;
@@ -84,7 +85,7 @@ export class CelestialVFX {
 
     // Flashing point light
     const flashLight = new THREE.PointLight(0xfff0b3, 15, 35);
-    flashLight.position.set(endPos.x, endPos.y + 2, endPos.z);
+    flashLight.position.set(endPos.x, groundY + 2, endPos.z);
     this.scene.add(flashLight);
 
     // 2. Expanding Celestial Shockwave Ring
@@ -95,10 +96,11 @@ export class CelestialVFX {
       transparent: true,
       opacity: 1.0,
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
     const shockwave = new THREE.Mesh(ringGeo, ringMat);
-    shockwave.position.copy(endPos);
+    shockwave.position.set(endPos.x, groundY + 0.08, endPos.z);
     this.scene.add(shockwave);
 
     // 3. Spark explosion particles
@@ -109,7 +111,7 @@ export class CelestialVFX {
 
     for (let i = 0; i < sparkCount; i++) {
       sparkPos[i * 3] = endPos.x;
-      sparkPos[i * 3 + 1] = endPos.y + 0.5;
+      sparkPos[i * 3 + 1] = groundY + 0.5;
       sparkPos[i * 3 + 2] = endPos.z;
 
       const angle = Math.random() * Math.PI * 2;
@@ -124,7 +126,8 @@ export class CelestialVFX {
       size: 0.5,
       transparent: true,
       opacity: 1,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
     const sparks = new THREE.Points(sparkGeo, sparkMat);
     this.scene.add(sparks);
@@ -189,14 +192,14 @@ export class CelestialVFX {
   }
 
   // Trigger cosmic fireworks burst on apotheosis / full attunement
-  triggerApotheosisCelebration() {
+  triggerApotheosisCelebration(originY = 0) {
     for (let i = 0; i < 6; i++) {
       setTimeout(() => {
         const offsetAngle = Math.random() * Math.PI * 2;
         const radius = Math.random() * 35 + 10;
         const target = new THREE.Vector3(
           Math.cos(offsetAngle) * radius,
-          0,
+          originY,
           Math.sin(offsetAngle) * radius
         );
         this.triggerDivineSmite(target);
@@ -212,7 +215,8 @@ export class CelestialVFX {
       transparent: true,
       opacity: 0.8,
       blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      depthWrite: false
     });
     const beam = new THREE.Mesh(beamGeo, beamMat);
     beam.position.set(pos.x, pos.y + 40, pos.z);
@@ -225,10 +229,11 @@ export class CelestialVFX {
       transparent: true,
       opacity: 0.9,
       blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      depthWrite: false
     });
     const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.position.copy(pos).setY(pos.y + 0.5);
+    ring.position.set(pos.x, pos.y + 0.5, pos.z);
     this.scene.add(ring);
 
     const fxObj = {
@@ -318,6 +323,8 @@ export class CelestialVFX {
   }
 
   createGroundExplosion(pos, colorHex, radius) {
+    const groundY = (pos && typeof pos.y === 'number') ? pos.y : 0;
+
     // Expanding ring shockwave
     const ringGeo = new THREE.RingGeometry(0.5, 2.0, 32);
     ringGeo.rotateX(-Math.PI / 2);
@@ -326,15 +333,16 @@ export class CelestialVFX {
       transparent: true,
       opacity: 0.9,
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
     const shock = new THREE.Mesh(ringGeo, ringMat);
-    shock.position.copy(pos).setY(0.15);
+    shock.position.set(pos.x, groundY + 0.08, pos.z);
     this.scene.add(shock);
 
     // Blast light
     const light = new THREE.PointLight(colorHex, 18, 35);
-    light.position.copy(pos).setY(2);
+    light.position.set(pos.x, groundY + 2, pos.z);
     this.scene.add(light);
 
     // Particle debris
@@ -344,7 +352,7 @@ export class CelestialVFX {
     const vels = [];
     for (let i = 0; i < count; i++) {
       pArr[i * 3] = pos.x;
-      pArr[i * 3 + 1] = pos.y + 0.3;
+      pArr[i * 3 + 1] = groundY + 0.3;
       pArr[i * 3 + 2] = pos.z;
       const angle = Math.random() * Math.PI * 2;
       const spd = Math.random() * 12 + 4;
@@ -356,7 +364,8 @@ export class CelestialVFX {
       size: 0.6,
       transparent: true,
       opacity: 1,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
     const pts = new THREE.Points(geo, mat);
     this.scene.add(pts);
@@ -507,7 +516,8 @@ export class CelestialVFX {
 
   // 4. Singularity Vortex: Miniature rotating black hole with accretion ring
   triggerSingularityVortex(targetPos) {
-    const pos = targetPos.clone().setY(Math.max(1.5, targetPos.y));
+    const groundY = (targetPos && typeof targetPos.y === 'number') ? targetPos.y : 0;
+    const pos = (targetPos ? targetPos.clone() : new THREE.Vector3()).setY(groundY + 1.5);
     const vortexGroup = new THREE.Group();
     vortexGroup.position.copy(pos);
 
@@ -525,7 +535,8 @@ export class CelestialVFX {
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.85,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
     const disk = new THREE.Mesh(diskGeo, diskMat);
     vortexGroup.add(disk);
