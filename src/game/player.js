@@ -541,15 +541,16 @@ export class CelestialPlayer {
       }
     }
 
-    // Keep within The Astral Expanse cosmic boundary (560m overworld, 2400m for sub-realms)
-    const isSubRealm = Math.abs(this.position.x) > 700 || Math.abs(this.position.z) > 700;
-    const maxRadius = isSubRealm ? 2400 : 560;
-    const distFromOrigin = Math.sqrt(this.position.x * this.position.x + this.position.z * this.position.z);
-    if (distFromOrigin > maxRadius) {
-      const angle = Math.atan2(this.position.z, this.position.x);
-      this.position.x = Math.cos(angle) * maxRadius;
-      this.position.z = Math.sin(angle) * maxRadius;
-      this.velocity.set(0, 0, 0);
+    // Keep within The Astral Expanse cosmic boundary (2600m across overworld & sub-realms)
+    if (!this.isMounted) {
+      const maxRadius = 2600;
+      const distFromOrigin = Math.hypot(this.position.x, this.position.z);
+      if (distFromOrigin > maxRadius) {
+        const angle = Math.atan2(this.position.z, this.position.x);
+        this.position.x = Math.cos(angle) * maxRadius;
+        this.position.z = Math.sin(angle) * maxRadius;
+        this.velocity.set(0, 0, 0);
+      }
     }
 
     // Altitude floor limit in deep space void

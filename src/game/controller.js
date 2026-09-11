@@ -1018,6 +1018,14 @@ export class GameController {
       m.mesh.position.x -= Math.sin(heading) * speed * delta;
       m.mesh.position.z -= Math.cos(heading) * speed * delta;
 
+      // Keep Manta within cosmic boundary (2600m)
+      const mantaDist = Math.hypot(m.mesh.position.x, m.mesh.position.z);
+      if (mantaDist > 2600) {
+        const angle = Math.atan2(m.mesh.position.z, m.mesh.position.x);
+        m.mesh.position.x = Math.cos(angle) * 2600;
+        m.mesh.position.z = Math.sin(angle) * 2600;
+      }
+
       // Aerodynamic Wing Flap
       const flapSpeed = this.inputState.sprint ? 9 : (this.inputState.moveBackward ? 3.5 : 4.5);
       const flap = Math.sin(this.elapsedTime * flapSpeed) * 0.45;
@@ -1052,6 +1060,13 @@ export class GameController {
 
     // 2. Update player physics, flight, and animations
     this.player.update(delta, this.inputState);
+
+    // Re-synchronize player position firmly to manta saddle after updates
+    if (this.mountedManta) {
+      const m = this.mountedManta;
+      this.player.position.set(m.mesh.position.x, m.mesh.position.y + 1.2, m.mesh.position.z);
+      this.player.velocity.set(0, 0, 0);
+    }
 
     // Subtle micro-shake on supersonic flight dive or manta turbo
     if ((this.player.isFlying || this.mountedManta) && this.inputState.sprint) {
