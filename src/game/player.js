@@ -34,6 +34,7 @@ export class CelestialPlayer {
     this.haloMesh = null;
     this.trailParticles = null;
     this.trailPositions = [];
+    this.trailHead = 0;
     this.windLines = null;
     this.lightPoint = null;
     this.auraMesh = null;
@@ -651,14 +652,17 @@ export class CelestialPlayer {
   }
 
   updateParticles(delta, isMoving) {
-    if (!this.trailParticles) return;
+    if (!this.trailParticles || !this.trailPositions.length) return;
 
-    this.trailPositions.unshift(this.position.clone().add(new THREE.Vector3(0, -0.2, 0)));
-    this.trailPositions.pop();
+    this.trailHead = (this.trailHead + 1) % this.trailPositions.length;
+    this.trailPositions[this.trailHead].copy(this.position);
+    this.trailPositions[this.trailHead].y -= 0.2;
 
     const positions = this.trailParticles.geometry.attributes.position.array;
-    for (let i = 0; i < this.trailPositions.length; i++) {
-      const pos = this.trailPositions[i];
+    const len = this.trailPositions.length;
+    for (let i = 0; i < len; i++) {
+      const idx = (this.trailHead - i + len) % len;
+      const pos = this.trailPositions[idx];
       positions[i * 3] = pos.x + (Math.sin(i * 0.5) * 0.15);
       positions[i * 3 + 1] = pos.y + (Math.cos(i * 0.5) * 0.1);
       positions[i * 3 + 2] = pos.z + (Math.sin(i * 0.7) * 0.15);

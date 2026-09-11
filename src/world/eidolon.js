@@ -30,7 +30,7 @@ export class EchoEidolon {
     // 2. Gyroscopic Concentric Orbit Rings
     this.rings = [];
     const ringRadii = [0.75, 0.95, 1.15];
-    const ringColors = [0xfacc15, 0x38bdf8, 0xc084fc];
+    const ringColors = [0xfacc15, 0x38bdf8, 0x93c5fd];
 
     ringRadii.forEach((r, idx) => {
       const rGeo = new THREE.TorusGeometry(r, 0.03, 6, 24);

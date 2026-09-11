@@ -68,8 +68,7 @@ class GameEngine {
     });
     this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMapping = THREE.NoToneMapping;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -85,11 +84,11 @@ class GameEngine {
 
   initLights() {
     // 1. Ambient Celestial Light
-    this.ambientLight = new THREE.AmbientLight(0xffeedd, 0.48);
+    this.ambientLight = new THREE.AmbientLight(0xffeedd, 0.52);
     this.scene.add(this.ambientLight);
 
-    // 2. Hemisphere Sky/Ground Light
-    this.hemiLight = new THREE.HemisphereLight(0xffeedd, 0x1e1b4b, 0.4);
+    // 2. Hemisphere Sky/Ground Light (Neutral slate ground bounce to remove purple cast)
+    this.hemiLight = new THREE.HemisphereLight(0xffeedd, 0x0f172a, 0.38);
     this.scene.add(this.hemiLight);
 
     // 3. Directional Celestial Sun with Soft Shadows
@@ -111,8 +110,8 @@ class GameEngine {
   initPostProcessing() {
     // Setup Unreal Bloom for divine glowing runes and aura
     this.composer = new EffectComposer(this.renderer);
-    const pixelRatio = Math.min(window.devicePixelRatio, 2);
-    this.composer.setPixelRatio(pixelRatio);
+    const composerPixelRatio = Math.min(window.devicePixelRatio, 1.25);
+    this.composer.setPixelRatio(composerPixelRatio);
     this.composer.setSize(window.innerWidth, window.innerHeight);
 
     const renderPass = new RenderPass(this.scene, this.camera);
@@ -120,9 +119,9 @@ class GameEngine {
 
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.55,  // strength
-      0.35,  // radius
-      0.88   // threshold (only truly glowing emissive surfaces bloom)
+      0.28,  // strength: clean, crisp bloom without hazy wash
+      0.22,  // radius: focused highlight glow
+      0.92   // threshold: blooms only true emissive runes, crystals, and sun
     );
     this.bloomPass = bloomPass;
     this.composer.addPass(bloomPass);
@@ -312,7 +311,8 @@ class GameEngine {
     this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(width, height);
 
-    this.composer.setPixelRatio(pixelRatio);
+    const composerPixelRatio = Math.min(window.devicePixelRatio, 1.25);
+    this.composer.setPixelRatio(composerPixelRatio);
     this.composer.setSize(width, height);
 
     if (this.cinematicPass) {

@@ -10,10 +10,10 @@ export class LivingNebulaSky {
     this.uniforms = {
       uTime: { value: 0.0 },
       uColorCore: { value: new THREE.Color(0x38bdf8) }, // Vibrant Cyan/Amber
-      uColorRim: { value: new THREE.Color(0x7c3aed) },  // Deep Purple
+      uColorRim: { value: new THREE.Color(0x1e3a8a) },  // Deep Astral Sapphire (tones down purple)
       uColorDust: { value: new THREE.Color(0x060814) }, // Cosmic Void Black
-      uDensity: { value: 1.2 },
-      uStarDensity: { value: 1.8 }
+      uDensity: { value: 1.1 },
+      uStarDensity: { value: 1.6 }
     };
 
     this.material = new THREE.ShaderMaterial({
@@ -61,12 +61,12 @@ export class LivingNebulaSky {
                              hash(i + vec3(1.0, 1.0, 1.0)), f.x), f.y), f.z);
         }
 
-        // Multi-Octave Fractional Brownian Motion (FBM)
+        // Optimized Multi-Octave Fractional Brownian Motion (FBM) for locked 60+ FPS
         float fbm(vec3 p) {
           float v = 0.0;
           float a = 0.52;
           vec3 shift = vec3(100.0);
-          for (int i = 0; i < 4; ++i) {
+          for (int i = 0; i < 2; ++i) {
             v += a * noise(p);
             p = p * 2.15 + shift;
             a *= 0.48;

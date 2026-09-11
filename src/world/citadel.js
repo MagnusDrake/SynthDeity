@@ -27,6 +27,23 @@ export class CelestialCitadel {
     this.runeSlateSuite = proceduralMaterials.createRuneSlateSuite(1024);
     this.marbleTex = this.goldMarbleSuite.map;
     this.runeTex = this.runeSlateSuite.map;
+    this.particleTex = this.createSoftParticleTexture();
+  }
+
+  createSoftParticleTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.7)');
+    grad.addColorStop(0.7, 'rgba(255, 255, 255, 0.15)');
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
   }
 
   initEnvironment() {
@@ -48,8 +65,8 @@ export class CelestialCitadel {
       starPositions[i * 3 + 1] = r * sinPhi * Math.sin(theta);
       starPositions[i * 3 + 2] = r * Math.cos(phi);
 
-      // Star colors: celestial blue, gold, soft violet, white
-      const palette = [0xffffff, 0xffeedd, 0x93c5fd, 0xc084fc, 0xfde047];
+      // Star colors: celestial blue, gold, soft azure, white
+      const palette = [0xffffff, 0xffeedd, 0x93c5fd, 0xbae6fd, 0xfde047];
       const color = new THREE.Color(palette[Math.floor(Math.random() * palette.length)]);
       starColors[i * 3] = color.r;
       starColors[i * 3 + 1] = color.g;
@@ -62,9 +79,11 @@ export class CelestialCitadel {
     const starMat = new THREE.PointsMaterial({
       size: 1.8,
       vertexColors: true,
+      map: this.particleTex,
       transparent: true,
       opacity: 0.85,
-      depthWrite: false
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
     });
 
     this.starfield = new THREE.Points(starGeo, starMat);
@@ -108,7 +127,7 @@ export class CelestialCitadel {
       nebulaPositions[i * 3 + 1] = -25 - Math.random() * 40;
       nebulaPositions[i * 3 + 2] = Math.sin(angle) * dist;
 
-      const pal = [0x38bdf8, 0x818cf8, 0xc084fc, 0xfde047];
+      const pal = [0x38bdf8, 0x60a5fa, 0x93c5fd, 0xfde047];
       const c = new THREE.Color(pal[Math.floor(Math.random() * pal.length)]);
       nebulaColors[i * 3] = c.r;
       nebulaColors[i * 3 + 1] = c.g;
@@ -119,10 +138,12 @@ export class CelestialCitadel {
     nebulaGeo.setAttribute('color', new THREE.BufferAttribute(nebulaColors, 3));
 
     const nebulaMat = new THREE.PointsMaterial({
-      size: 4.5,
+      size: 2.2,
       vertexColors: true,
+      map: this.particleTex,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.45,
+      depthWrite: false,
       blending: THREE.AdditiveBlending
     });
 

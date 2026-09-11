@@ -530,7 +530,7 @@ export class AstralExpanse {
       pPos[i * 3 + 1] = -10 - Math.random() * 80;
       pPos[i * 3 + 2] = 195 + Math.sin(ang) * r;
 
-      const c = new THREE.Color(Math.random() > 0.5 ? 0xc084fc : 0x38bdf8);
+      const c = new THREE.Color(Math.random() > 0.5 ? 0x60a5fa : 0x38bdf8);
       pColor[i * 3] = c.r;
       pColor[i * 3 + 1] = c.g;
       pColor[i * 3 + 2] = c.b;
@@ -539,9 +539,23 @@ export class AstralExpanse {
     pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
     pGeo.setAttribute('color', new THREE.BufferAttribute(pColor, 3));
 
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.7)');
+    grad.addColorStop(0.7, 'rgba(255, 255, 255, 0.15)');
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+    const pTex = new THREE.CanvasTexture(canvas);
+
     const pMat = new THREE.PointsMaterial({
-      size: 3.5,
+      size: 2.0,
       vertexColors: true,
+      map: pTex,
       transparent: true,
       opacity: 0.65,
       blending: THREE.AdditiveBlending,
