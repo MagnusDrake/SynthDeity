@@ -66,6 +66,15 @@ This repository contains **SynthDeity: Loop Fabrication**, a high-performance 3D
 - When warping a player to a landmark, never spawn them at the exact center coordinates if an entity (e.g. monolith, singularity, archon spire) occupies that position.
 - Offset the spawn position back by `+14` to `+18` units on the Z axis, and orient the camera forward (`cameraYaw = 0`, `cameraPitch = 0.25`, `cameraDistance = 10`) so the player immediately enjoys a cinematic establishing shot.
 
+### 7. Shader Mathematical Invariants & Preventing GPU Tile `NaN` Blackouts
+- **The Bug**: Calling `pow(x, y)` when `x < 0.0` in GLSL evaluates to `NaN`. When an animated wave/procedural function (like Voronoi water or light shafts) produces an unclamped negative value, a single pixel turns to `NaN`. In multi-mip post-processing passes like `UnrealBloomPass`, Gaussian blur spreads that single `NaN` across entire blur kernels, manifesting as flickering black rectangular screen boxes that come and go with animation time.
+- **The Rule**: Never call `pow()`, `sqrt()`, `acos()`, or divide without defensively clamping inputs:
+  ```glsl
+  float caustic = pow(clamp(1.0 - (c1 * 0.6 + c2 * 0.4), 0.0, 1.0), 2.2);
+  color.r = pow(clamp(color.r, 0.0001, 1.0), 0.96);
+  ```
+  Ensure all transparent `PointsMaterial` instances set `depthWrite: false` to avoid depth-buffer occlusion square artifacts.
+
 ---
 
 ## 🎮 Narrative & Progression Loop (Three-Act Odyssey)

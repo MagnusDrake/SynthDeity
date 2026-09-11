@@ -544,7 +544,8 @@ export class AstralExpanse {
       vertexColors: true,
       transparent: true,
       opacity: 0.65,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
 
     this.stardustFalls = new THREE.Points(pGeo, pMat);

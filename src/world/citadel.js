@@ -63,7 +63,8 @@ export class CelestialCitadel {
       size: 1.8,
       vertexColors: true,
       transparent: true,
-      opacity: 0.85
+      opacity: 0.85,
+      depthWrite: false
     });
 
     this.starfield = new THREE.Points(starGeo, starMat);

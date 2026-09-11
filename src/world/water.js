@@ -63,7 +63,7 @@ export class AstralEtherPool {
               if (d < m) m = d;
             }
           }
-          return sqrt(m);
+          return sqrt(max(0.0, m));
         }
 
         void main() {
@@ -76,14 +76,15 @@ export class AstralEtherPool {
 
           float c1 = voronoi(uv1 * 4.0);
           float c2 = voronoi(uv2 * 6.0);
-          float caustic = pow(1.0 - (c1 * 0.6 + c2 * 0.4), 2.2);
+          float causticRaw = clamp(1.0 - (c1 * 0.6 + c2 * 0.4), 0.0, 1.0);
+          float caustic = pow(causticRaw, 2.2);
 
           // 2. Liquid gradient mixing
           vec3 water = mix(uDeepColor, uShallowColor, smoothstep(0.0, 0.9, dist));
           water += uCausticColor * caustic * 0.75;
 
-          // 3. Shimmering star-flecks
-          float sparkle = pow(c1, 8.0) * 1.5;
+          // 3. Shimmering star-flecks (safely clamped)
+          float sparkle = pow(clamp((c1 - 0.45) * 1.6, 0.0, 1.0), 6.0) * 1.2;
           water += vec3(sparkle);
 
           // 4. Soft edge attenuation & rim foam
@@ -91,7 +92,7 @@ export class AstralEtherPool {
           float foam = smoothstep(0.85, 0.95, dist) * caustic * 0.4;
           water += vec3(foam);
 
-          gl_FragColor = vec4(water, edgeAlpha * uOpacity);
+          gl_FragColor = vec4(clamp(water, 0.0, 4.0), clamp(edgeAlpha * uOpacity, 0.0, 1.0));
         }
       `
     });

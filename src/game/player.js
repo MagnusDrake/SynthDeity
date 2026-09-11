@@ -121,7 +121,7 @@ export class CelestialPlayer {
         void main() {
           vec3 n = normalize(vNormal);
           vec3 v = normalize(vViewPos);
-          float fresnel = pow(1.0 - max(0.0, dot(v, n)), 2.8);
+          float fresnel = pow(clamp(1.0 - max(0.0, dot(v, n)), 0.0, 1.0), 2.8);
           float pulse = 0.85 + 0.15 * sin(uTime * 4.0);
           vec3 col = mix(uColorCore, uColorRim, fresnel);
           gl_FragColor = vec4(col * fresnel * pulse * uIntensity, fresnel * 0.9 * uIntensity);

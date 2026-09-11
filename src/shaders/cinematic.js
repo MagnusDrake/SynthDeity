@@ -8,7 +8,7 @@ export const CinematicShader = {
     tDiffuse: { value: null },
     uTime: { value: 0.0 },
     uVignetteStrength: { value: 0.36 },
-    uGrainStrength: { value: 0.038 },
+    uGrainStrength: { value: 0.035 },
     uAberrationStrength: { value: 0.0032 },
     uStreakStrength: { value: 0.22 },
     uContrast: { value: 1.08 },
@@ -18,10 +18,10 @@ export const CinematicShader = {
     uLightScreenPos: { value: new THREE.Vector2(0.5, 0.5) },
     uLightInView: { value: 0.0 }, // 1.0 if in front of camera, 0.0 if behind
     uLightColor: { value: new THREE.Color(0xffeedd) },
-    uGodRaysExposure: { value: 0.20 },
+    uGodRaysExposure: { value: 0.18 },
     uGodRaysDecay: { value: 0.94 },
     uGodRaysDensity: { value: 0.82 },
-    uGodRaysWeight: { value: 0.35 }
+    uGodRaysWeight: { value: 0.32 }
   },
 
   vertexShader: `
@@ -52,14 +52,14 @@ export const CinematicShader = {
 
     varying vec2 vUv;
 
-    // Fast organic pseudo-random noise for 35mm film grain
+    // Robust, battle-tested standard GLSL noise that avoids precision overflow and NaN
     float random(vec2 p) {
-      vec2 k1 = vec2(23.14069263277926, 2.665144142690225);
-      return fract(cos(dot(p, k1)) * 12345.6789);
+      return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453123);
     }
 
-    // Narkowicz ACES Filmic Tone Mapping approximation
+    // Narkowicz ACES Filmic Tone Mapping approximation (guaranteed non-negative input to avoid div/0)
     vec3 ACESFilm(vec3 x) {
+      x = max(vec3(0.0), x);
       float a = 2.51;
       float b = 0.03;
       float c = 2.43;
@@ -75,14 +75,14 @@ export const CinematicShader = {
       vec2 uvOffset = vUv - center;
       float dist = length(uvOffset);
 
-      // 1. Radial Chromatic Aberration (color fringing at lens periphery)
-      vec2 redUv  = center + uvOffset * (1.0 + uAberrationStrength * dist * 2.0);
-      vec2 blueUv = center + uvOffset * (1.0 - uAberrationStrength * dist * 2.0);
+      // 1. Radial Chromatic Aberration (safely clamped)
+      vec2 redUv  = clamp(center + uvOffset * (1.0 + uAberrationStrength * dist * 2.0), 0.0, 1.0);
+      vec2 blueUv = clamp(center + uvOffset * (1.0 - uAberrationStrength * dist * 2.0), 0.0, 1.0);
 
       float r = texture2D(tDiffuse, redUv).r;
       float g = texture2D(tDiffuse, vUv).g;
       float b = texture2D(tDiffuse, blueUv).b;
-      vec3 color = vec3(r, g, b);
+      vec3 color = clamp(vec3(r, g, b), 0.0, 16.0);
 
       // 2. Volumetric Crepuscular God Rays (Screen-Space Radial Raymarch)
       if (uLightInView > 0.01) {
@@ -94,7 +94,7 @@ export const CinematicShader = {
         for (int i = 0; i < NUM_RAY_SAMPLES; i++) {
           marchUv -= deltaCoord;
           vec2 clampedUv = clamp(marchUv, 0.0, 1.0);
-          vec3 s = texture2D(tDiffuse, clampedUv).rgb;
+          vec3 s = clamp(texture2D(tDiffuse, clampedUv).rgb, 0.0, 8.0);
           float lum = dot(s, vec3(0.299, 0.587, 0.114));
           vec3 bright = s * smoothstep(0.48, 1.0, lum);
 
@@ -105,8 +105,8 @@ export const CinematicShader = {
         }
 
         vec3 rays = rayAccum * uGodRaysExposure * uLightColor * uLightInView;
-        // Screen blend rays with base image
-        color = 1.0 - (1.0 - color) * (1.0 - rays);
+        // Physically additive blending for HDR volumetric light shafts
+        color += clamp(rays, 0.0, 4.0);
       }
 
       // 3. Horizontal Anamorphic Lens Flare Streaks on High-Luminance Highlights
@@ -115,22 +115,22 @@ export const CinematicShader = {
       for (int i = -3; i <= 3; i++) {
         if (i == 0) continue;
         float offset = float(i) * (streakWidth / 3.0);
-        vec3 sSample = texture2D(tDiffuse, clamp(vUv + vec2(offset, 0.0), 0.0, 1.0)).rgb;
+        vec3 sSample = clamp(texture2D(tDiffuse, clamp(vUv + vec2(offset, 0.0), 0.0, 1.0)).rgb, 0.0, 8.0);
         float lum = dot(sSample, vec3(0.299, 0.587, 0.114));
         if (lum > 0.82) {
           streak += sSample * (1.0 - abs(float(i)) / 4.0);
         }
       }
-      color += streak * uStreakStrength * vec3(0.4, 0.8, 1.2); // Celestial cyan/gold streak tint
+      color += clamp(streak * uStreakStrength * vec3(0.4, 0.8, 1.2), 0.0, 2.0);
 
       // 4. Cinematic Color Grading (Rich Cosmic Shadows & Warm Highlights)
-      // Shadow split-toning: cool midnight indigo in the dark recesses
       vec3 shadowTint = vec3(0.02, 0.03, 0.06);
-      color = mix(color, color + shadowTint, (1.0 - smoothstep(0.0, 0.45, color)));
+      color = mix(color, color + shadowTint, (1.0 - smoothstep(0.0, 0.45, clamp(color, 0.0, 1.0))));
 
-      // Warm divine radiance in the mid-highlights
-      color.r = pow(color.r, 0.96);
-      color.g = pow(color.g, 0.98);
+      // Mid-highlights: safe clamp strictly above 0 to prevent any negative pow NaN
+      vec3 safeColor = clamp(color, 0.0001, 1.0);
+      color.r = mix(color.r, pow(safeColor.r, 0.96), step(color.r, 1.0));
+      color.g = mix(color.g, pow(safeColor.g, 0.98), step(color.g, 1.0));
 
       // Contrast S-Curve
       color = (color - 0.5) * uContrast + 0.5;
@@ -141,13 +141,13 @@ export const CinematicShader = {
 
       // 5. Optical Lens Vignette
       float vignette = 1.0 - smoothstep(0.42, 0.96, dist) * uVignetteStrength;
-      color *= vignette;
+      color *= clamp(vignette, 0.0, 1.0);
 
       // 6. 35mm Organic Film Grain
       float grain = (random(vUv * 600.0 + fract(uTime * 19.0)) - 0.5) * uGrainStrength;
       color += vec3(grain);
 
-      gl_FragColor = vec4(color, 1.0);
+      gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
     }
   `
 };
