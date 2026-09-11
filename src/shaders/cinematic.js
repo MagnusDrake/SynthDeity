@@ -126,7 +126,7 @@ export const CinematicShader = {
         float offset = float(i) * (streakWidth / 2.0);
         vec3 sSample = clamp(texture2D(tDiffuse, clamp(vUv + vec2(offset, 0.0), 0.0, 1.0)).rgb, 0.0, 8.0);
         float lum = dot(sSample, vec3(0.299, 0.587, 0.114));
-        if (lum > 0.88) {
+        if (lum > 0.95) {
           streak += sSample * (1.0 - abs(float(i)) / 3.0);
         }
       }

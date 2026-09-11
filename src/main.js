@@ -119,9 +119,9 @@ class GameEngine {
 
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.28,  // strength: clean, crisp bloom without hazy wash
+      0.20,  // strength: clean, crisp bloom without blown-out specular highlights
       0.22,  // radius: focused highlight glow
-      0.92   // threshold: blooms only true emissive runes, crystals, and sun
+      0.94   // threshold: blooms only true emissive runes, crystals, and sun
     );
     this.bloomPass = bloomPass;
     this.composer.addPass(bloomPass);

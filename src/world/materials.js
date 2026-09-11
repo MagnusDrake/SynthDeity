@@ -379,32 +379,32 @@ class ProceduralTextureEngine {
     hCanvas.height = resolution;
     const hCtx = hCanvas.getContext('2d');
 
-    // Deep amethyst violet base
-    dCtx.fillStyle = '#1e1b4b';
+    // Refined deep cosmic amethyst stone base (grounded, non-neon)
+    dCtx.fillStyle = '#0f1123';
     dCtx.fillRect(0, 0, resolution, resolution);
 
     hCtx.fillStyle = '#808080';
     hCtx.fillRect(0, 0, resolution, resolution);
 
-    // Faceted crystalline cell highlights
+    // Faceted crystalline cell highlights (softened to prevent specular blowouts)
     for (let i = 0; i < 40; i++) {
       const cx = Math.random() * resolution;
       const cy = Math.random() * resolution;
       const rad = 25 + Math.random() * 80;
 
       const grad = dCtx.createRadialGradient(cx, cy, 2, cx, cy, rad);
-      grad.addColorStop(0, '#c084fc');
-      grad.addColorStop(0.5, '#7c3aed');
-      grad.addColorStop(1, 'transparent');
+      grad.addColorStop(0, 'rgba(167, 139, 250, 0.42)'); // Soft starlight lavender
+      grad.addColorStop(0.5, 'rgba(124, 58, 237, 0.22)'); // Deep royal purple
+      grad.addColorStop(1, 'rgba(15, 17, 35, 0)');
       dCtx.fillStyle = grad;
       dCtx.beginPath();
       dCtx.arc(cx, cy, rad, 0, Math.PI * 2);
       dCtx.fill();
 
-      // Height facet
+      // Soft height facet
       const hGrad = hCtx.createRadialGradient(cx, cy, 2, cx, cy, rad);
-      hGrad.addColorStop(0, '#ffffff');
-      hGrad.addColorStop(1, '#404040');
+      hGrad.addColorStop(0, '#989898');
+      hGrad.addColorStop(1, '#666666');
       hCtx.fillStyle = hGrad;
       hCtx.beginPath();
       hCtx.arc(cx, cy, rad, 0, Math.PI * 2);
@@ -415,14 +415,14 @@ class ProceduralTextureEngine {
     rCanvas.width = resolution;
     rCanvas.height = resolution;
     const rCtx = rCanvas.getContext('2d');
-    rCtx.fillStyle = '#383838'; // glassy crystal roughness (~0.22)
+    rCtx.fillStyle = '#9e9e9e'; // Soft satin mineral rock roughness (~0.62)
     rCtx.fillRect(0, 0, resolution, resolution);
 
     const mCanvas = document.createElement('canvas');
     mCanvas.width = resolution;
     mCanvas.height = resolution;
     const mCtx = mCanvas.getContext('2d');
-    mCtx.fillStyle = '#bfbfbf'; // crystalline metallic specularity (~0.75)
+    mCtx.fillStyle = '#1f1f1f'; // Natural dielectric stone metalness (~0.12)
     mCtx.fillRect(0, 0, resolution, resolution);
 
     const diffuseMap = new THREE.CanvasTexture(dCanvas);
@@ -437,16 +437,16 @@ class ProceduralTextureEngine {
     metalnessMap.wrapS = THREE.RepeatWrapping;
     metalnessMap.wrapT = THREE.RepeatWrapping;
 
-    const normalMap = this.generateNormalMap(hCanvas, 2.8);
+    const normalMap = this.generateNormalMap(hCanvas, 1.2);
 
     const suite = {
       map: diffuseMap,
       normalMap: normalMap,
       roughnessMap: roughnessMap,
       metalnessMap: metalnessMap,
-      roughness: 0.22,
-      metalness: 0.75,
-      normalScale: new THREE.Vector2(1.3, 1.3)
+      roughness: 0.62,
+      metalness: 0.12,
+      normalScale: new THREE.Vector2(0.8, 0.8)
     };
 
     this.cache.set('crystal_rock', suite);

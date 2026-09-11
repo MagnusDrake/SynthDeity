@@ -65,6 +65,8 @@ export class AstralExpanse {
       topMat = new THREE.MeshStandardMaterial({
         map: this.crystalRockSuite.map,
         normalMap: this.crystalRockSuite.normalMap,
+        roughnessMap: this.crystalRockSuite.roughnessMap,
+        metalnessMap: this.crystalRockSuite.metalnessMap,
         normalScale: this.crystalRockSuite.normalScale,
         roughness: this.crystalRockSuite.roughness,
         metalness: this.crystalRockSuite.metalness
@@ -80,9 +82,9 @@ export class AstralExpanse {
     const rimGeo = new THREE.TorusGeometry(radius, 0.4, 6, 24);
     rimGeo.rotateX(Math.PI / 2);
     const rimMat = new THREE.MeshStandardMaterial({
-      color: materialType === 'rock' ? 0xc084fc : 0xffd700,
-      roughness: 0.2,
-      metalness: 0.8
+      color: materialType === 'rock' ? 0x8b5cf6 : 0xffd700,
+      roughness: 0.45,
+      metalness: 0.35
     });
     const rimMesh = new THREE.Mesh(rimGeo, rimMat);
     rimMesh.position.y = 0.05;
@@ -219,7 +221,7 @@ export class AstralExpanse {
     this.createCragIsland(crystalCrags.position.x - 28, crystalCrags.position.y + 15, crystalCrags.position.z - 30, 20, 24, 'rock');
 
     // Towering Glowing Crystals on the Crags
-    const crystalColors = [0xc084fc, 0xa855f7, 0x38bdf8, 0xe879f9];
+    const crystalColors = [0x8b5cf6, 0x7c3aed, 0x38bdf8, 0xa78bfa];
     for (let i = 0; i < 9; i++) {
       const angle = (i / 9) * Math.PI * 2;
       const r = 8 + (i % 3) * 6;
@@ -233,9 +235,9 @@ export class AstralExpanse {
       const cMat = new THREE.MeshStandardMaterial({
         color: col,
         emissive: col,
-        emissiveIntensity: 0.6,
-        roughness: 0.15,
-        metalness: 0.85
+        emissiveIntensity: 0.28,
+        roughness: 0.42,
+        metalness: 0.28
       });
       const cMesh = new THREE.Mesh(cGeo, cMat);
       cMesh.position.set(cx, cy + cHeight / 2, cz);
@@ -244,9 +246,9 @@ export class AstralExpanse {
       cMesh.castShadow = true;
       this.group.add(cMesh);
 
-      // Point lights on major crystals
+      // Point lights on major crystals (gentle ambient crystal glow)
       if (i % 2 === 0) {
-        const cLight = new THREE.PointLight(col, 2.5, 20);
+        const cLight = new THREE.PointLight(col, 0.75, 14);
         cLight.position.set(cx, cy + cHeight, cz);
         this.group.add(cLight);
       }
@@ -361,9 +363,9 @@ export class AstralExpanse {
     const monoMat = new THREE.MeshStandardMaterial({
       color: data.color,
       emissive: data.color,
-      emissiveIntensity: 0.45,
-      roughness: 0.2,
-      metalness: 0.8
+      emissiveIntensity: 0.25,
+      roughness: 0.42,
+      metalness: 0.35
     });
     const monolith = new THREE.Mesh(monoGeo, monoMat);
     monolith.position.y = 7.5;
@@ -374,8 +376,8 @@ export class AstralExpanse {
     const ringGeo = new THREE.TorusGeometry(2.4, 0.08, 8, 32);
     const ringMat = new THREE.MeshStandardMaterial({
       color: data.color,
-      roughness: 0.15,
-      metalness: 0.95
+      roughness: 0.38,
+      metalness: 0.55
     });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.rotation.x = Math.PI / 2;
@@ -387,7 +389,7 @@ export class AstralExpanse {
     const beamMat = new THREE.MeshBasicMaterial({
       color: data.color,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.22,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide
     });
@@ -717,8 +719,8 @@ export class AstralExpanse {
     const gate = this.stargates[realmKey];
     if (gate) {
       gate.isActive = true;
-      gate.wormholeMat.opacity = 0.85;
-      const flare = new THREE.PointLight(gate.config.color, 15, 30);
+      gate.wormholeMat.opacity = 0.75;
+      const flare = new THREE.PointLight(gate.config.color, 3.5, 18);
       flare.position.y = 3.6;
       gate.group.add(flare);
     }
@@ -739,11 +741,11 @@ export class AstralExpanse {
     const m = this.subRealmOrigins.matrix;
 
     // Sub-Realm Lighting: Emerald Neon & Cyan Glow
-    const matrixLight = new THREE.PointLight(0x10b981, 35, 450);
+    const matrixLight = new THREE.PointLight(0x10b981, 22, 380);
     matrixLight.position.set(m.x, m.y + 25, m.z);
     this.group.add(matrixLight);
 
-    const matrixFill = new THREE.PointLight(0x06b6d4, 20, 300);
+    const matrixFill = new THREE.PointLight(0x06b6d4, 14, 250);
     matrixFill.position.set(m.x, m.y + 5, m.z);
     this.group.add(matrixFill);
 
@@ -801,12 +803,12 @@ export class AstralExpanse {
     // 2. THE ASTEROID NEBULA (Zero-G Asteroid Field)
     const ast = this.subRealmOrigins.asteroids;
 
-    // Sub-Realm Lighting: Violet & Magenta Cosmic Glow
-    const astLight = new THREE.PointLight(0xc084fc, 40, 500);
+    // Sub-Realm Lighting: Violet & Magenta Cosmic Glow (balanced to prevent blinding bloom)
+    const astLight = new THREE.PointLight(0x8b5cf6, 14, 380);
     astLight.position.set(ast.x, ast.y + 35, ast.z);
     this.group.add(astLight);
 
-    const astDir = new THREE.DirectionalLight(0xe879f9, 2.5);
+    const astDir = new THREE.DirectionalLight(0xa78bfa, 1.2);
     astDir.position.set(ast.x + 50, ast.y + 80, ast.z + 50);
     this.group.add(astDir);
 
@@ -839,11 +841,11 @@ export class AstralExpanse {
     const ch = this.subRealmOrigins.chronos;
 
     // Sub-Realm Lighting: Cyan Temporal Glow & Solar Gold
-    const chLight = new THREE.PointLight(0x38bdf8, 45, 500);
+    const chLight = new THREE.PointLight(0x38bdf8, 20, 380);
     chLight.position.set(ch.x, ch.y + 35, ch.z);
     this.group.add(chLight);
 
-    const chGold = new THREE.PointLight(0xfacc15, 25, 300);
+    const chGold = new THREE.PointLight(0xfacc15, 12, 220);
     chGold.position.set(ch.x, ch.y + 12, ch.z);
     this.group.add(chGold);
 
@@ -865,7 +867,7 @@ export class AstralExpanse {
     const s = this.subRealmOrigins.singularity;
 
     // Sub-Realm Lighting: Emerald Void Glow & Accretion Flare
-    const singLight = new THREE.PointLight(0x10b981, 45, 500);
+    const singLight = new THREE.PointLight(0x10b981, 20, 380);
     singLight.position.set(s.x, s.y + 30, s.z);
     this.group.add(singLight);
 
@@ -877,7 +879,7 @@ export class AstralExpanse {
     colossalBlackHole.position.set(s.x, s.y + 25, s.z + 55);
     this.group.add(colossalBlackHole);
 
-    const flareLight = new THREE.PointLight(0x34d399, 35, 350);
+    const flareLight = new THREE.PointLight(0x34d399, 16, 250);
     flareLight.position.copy(colossalBlackHole.position);
     this.group.add(flareLight);
 

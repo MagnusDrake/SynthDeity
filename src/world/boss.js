@@ -74,7 +74,7 @@ export class VoidLeviathan {
     this.headMesh = headMesh;
 
     // Head Core Light
-    this.headLight = new THREE.PointLight(0xa855f7, 45, 120);
+    this.headLight = new THREE.PointLight(0x8b5cf6, 14, 65);
     headMesh.add(this.headLight);
 
     // 2. Trailing Vertebrae Segments
@@ -84,9 +84,9 @@ export class VoidLeviathan {
       const segMat = new THREE.MeshStandardMaterial({
         color: 0x18181b,
         emissive: i % 2 === 0 ? 0x7c3aed : 0x10b981,
-        emissiveIntensity: 0.6,
-        roughness: 0.3,
-        metalness: 0.7
+        emissiveIntensity: 0.35,
+        roughness: 0.45,
+        metalness: 0.4
       });
       const segMesh = new THREE.Mesh(segGeo, segMat);
       const segPos = new THREE.Vector3(0, 110, -250 + (i + 1) * 7);

@@ -214,8 +214,8 @@ export class CelestialPlayer {
     this.mesh.add(this.haloMesh);
 
     // 5. Dynamic Divine Point Light
-    this.lightPoint = new THREE.PointLight(0xffe066, 4.0, 18);
-    this.lightPoint.position.set(0, 0, 0);
+    this.lightPoint = new THREE.PointLight(0xffe066, 1.5, 14);
+    this.lightPoint.position.set(0, 1.2, 0);
     this.mesh.add(this.lightPoint);
   }
 

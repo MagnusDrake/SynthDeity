@@ -84,7 +84,7 @@ export class CelestialVFX {
     this.scene.add(boltLine);
 
     // Flashing point light
-    const flashLight = new THREE.PointLight(0xfff0b3, 15, 35);
+    const flashLight = new THREE.PointLight(0xfff0b3, 4.5, 22);
     flashLight.position.set(endPos.x, groundY + 2, endPos.z);
     this.scene.add(flashLight);
 
@@ -148,7 +148,7 @@ export class CelestialVFX {
         }
 
         // Fade flash light
-        flashLight.intensity = Math.max(0, 15 * (1 - fxObj.age * 3));
+        flashLight.intensity = Math.max(0, 4.5 * (1 - fxObj.age * 3));
         if (fxObj.age > 0.4 && flashLight.parent) {
           this.scene.remove(flashLight);
         }
@@ -341,7 +341,7 @@ export class CelestialVFX {
     this.scene.add(shock);
 
     // Blast light
-    const light = new THREE.PointLight(colorHex, 18, 35);
+    const light = new THREE.PointLight(colorHex, 5.0, 24);
     light.position.set(pos.x, groundY + 2, pos.z);
     this.scene.add(light);
 
@@ -377,7 +377,7 @@ export class CelestialVFX {
         const s = 1 + fx.age * radius;
         shock.scale.set(s, s, s);
         ringMat.opacity = Math.max(0, 1 - fx.age / 0.8);
-        light.intensity = Math.max(0, 18 * (1 - fx.age / 0.4));
+        light.intensity = Math.max(0, 5.0 * (1 - fx.age / 0.4));
 
         const p = geo.attributes.position.array;
         for (let i = 0; i < count; i++) {
@@ -417,7 +417,7 @@ export class CelestialVFX {
     wave.position.copy(originPos);
     this.scene.add(wave);
 
-    const light = new THREE.PointLight(0xc084fc, 12, 40);
+    const light = new THREE.PointLight(0x8b5cf6, 3.5, 24);
     light.position.copy(originPos);
     this.scene.add(light);
 
@@ -441,7 +441,8 @@ export class CelestialVFX {
       size: 0.8,
       transparent: true,
       opacity: 0.9,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
     const implosionPoints = new THREE.Points(pGeo, pMat);
     this.scene.add(implosionPoints);
@@ -453,7 +454,7 @@ export class CelestialVFX {
         const s = 1 + fx.age * 28;
         wave.scale.set(s, s, s);
         sphereMat.opacity = Math.max(0, 0.85 * (1 - fx.age / 1.4));
-        light.intensity = Math.max(0, 12 * (1 - fx.age / 0.8));
+        light.intensity = Math.max(0, 3.5 * (1 - fx.age / 0.8));
 
         // Pull implosion points toward origin
         const arr = pGeo.attributes.position.array;
@@ -493,7 +494,7 @@ export class CelestialVFX {
     const streak = new THREE.Mesh(tubeGeo, tubeMat);
     this.scene.add(streak);
 
-    const flash = new THREE.PointLight(0x7dd3fc, 16, 25);
+    const flash = new THREE.PointLight(0x7dd3fc, 4.5, 20);
     flash.position.copy(endPos).setY(endPos.y + 1.5);
     this.scene.add(flash);
 
@@ -502,7 +503,7 @@ export class CelestialVFX {
       maxAge: 0.45,
       update: (delta) => {
         tubeMat.opacity = Math.max(0, 0.95 * (1 - fx.age / 0.45));
-        flash.intensity = Math.max(0, 16 * (1 - fx.age / 0.3));
+        flash.intensity = Math.max(0, 4.5 * (1 - fx.age / 0.3));
       },
       cleanup: () => {
         this.scene.remove(streak);

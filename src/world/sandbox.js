@@ -225,16 +225,16 @@ export class GenesisSandbox {
     const cHeight = 14;
     const cGeo = new THREE.ConeGeometry(1.6, cHeight, 6);
     const cMat = new THREE.MeshStandardMaterial({
-      color: 0xc084fc,
-      emissive: 0xa855f7,
-      emissiveIntensity: 0.8,
-      roughness: 0.1,
-      metalness: 0.9
+      color: 0x8b5cf6,
+      emissive: 0x7c3aed,
+      emissiveIntensity: 0.35,
+      roughness: 0.38,
+      metalness: 0.30
     });
     const crystal = new THREE.Mesh(cGeo, cMat);
     crystal.position.set(x, y + cHeight / 2, z);
 
-    const cLight = new THREE.PointLight(0xc084fc, 3.5, 30);
+    const cLight = new THREE.PointLight(0x8b5cf6, 1.2, 16);
     cLight.position.set(x, y + cHeight, z);
 
     const cGroup = new THREE.Group();
