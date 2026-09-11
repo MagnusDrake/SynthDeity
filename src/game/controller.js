@@ -571,6 +571,21 @@ export class GameController {
 
     // 1. Stargate warp interaction
     if (item.data && item.data.isStargate) {
+      const realmKey = item.data.realmKey;
+      if (!this.clearedTrials.has(realmKey)) {
+        const realm = ARCHON_REALMS[realmKey];
+        const trialName = realm ? realm.trial.name : 'Archon Trial';
+        const archonName = realm ? realm.archonName : 'Archon';
+        if (this.hud) {
+          this.hud.showNotification(
+            `🔒 Dimensional Stargate Sealed! Conquer the ${trialName} (${archonName}) to awaken this gateway.`,
+            'warning'
+          );
+        }
+        audioSystem.playHoverStep();
+        this.addCameraShake(0.15);
+        return;
+      }
       this.warpToSubRealm(item.data.destination, item.data.gateName);
       return;
     }
@@ -843,10 +858,15 @@ export class GameController {
     audioSystem.playTrialSuccess();
     this.addCameraShake(0.85);
 
-    // 3. Notify Player
+    // 3. Awaken the Dimensional Stargate on this Archipelago
+    if (this.expanse && this.expanse.activateStargate) {
+      this.expanse.activateStargate(realmKey);
+    }
+
+    // 4. Notify Player
     if (this.hud) {
       this.hud.showNotification(
-        `🏆 ${realm.trial.name} Conquered! Unlocked: ${realm.power.name} & Ignited Ley-Line Bridge!`,
+        `🏆 ${realm.trial.name} Conquered! Unlocked: ${realm.power.name}, Ley-Line Bridge & Dimensional Stargate!`,
         'success'
       );
       if (this.hud.updateArchonProgress) {
@@ -854,7 +874,7 @@ export class GameController {
       }
     }
 
-    // 4. Check for Act III: Galactic Sovereignty
+    // 5. Check for Act III: Galactic Sovereignty
     if (this.clearedTrials.size === 4 && this.act < 3) {
       this.act = 3;
       setTimeout(() => {
@@ -867,6 +887,13 @@ export class GameController {
     audioSystem.playApotheosis();
     this.vfx.triggerApotheosisCelebration();
     this.addCameraShake(1.0);
+
+    // Awaken all 4 Dimensional Stargates
+    if (this.expanse && this.expanse.activateStargate) {
+      ['TITAN', 'CRYSTAL', 'CHRONOS', 'ABYSS'].forEach((key) => {
+        this.expanse.activateStargate(key);
+      });
+    }
 
     if (this.hud && this.hud.showGalacticSovereigntyBanner) {
       this.hud.showGalacticSovereigntyBanner();
@@ -1137,6 +1164,17 @@ export class GameController {
       if (nearest) {
         if (nearest.data && nearest.data.isAstralObelisk) {
           this.hud.showInteractPrompt(`[E] Commune & Sacred Lore | [Y] Converse [AI]`);
+        } else if (nearest.data && nearest.data.isStargate) {
+          const isConquered = this.clearedTrials.has(nearest.data.realmKey);
+          if (isConquered) {
+            this.hud.showInteractPrompt(`[E] Enter Dimensional Stargate: ${nearest.data.gateName}`);
+          } else {
+            const realm = ARCHON_REALMS[nearest.data.realmKey];
+            const trialName = realm ? realm.trial.name : 'Archon Trial';
+            this.hud.showInteractPrompt(`🔒 Stargate Sealed — Requires ${trialName}`);
+          }
+        } else if (nearest.data && nearest.data.isReturnGate) {
+          this.hud.showInteractPrompt(`[E] Traverse Return Gate to Main Galaxy`);
         } else {
           this.hud.showInteractPrompt(`[E] Attune with ${nearest.name}`);
         }

@@ -646,25 +646,45 @@ export class AstralExpanse {
       ring.position.y = 3.6;
       gateGroup.add(ring);
 
-      // Gold rune trim
+      // Gold/color rune trim
       const trimGeo = new THREE.TorusGeometry(3.6, 0.1, 6, 36);
-      const trimMat = new THREE.MeshBasicMaterial({ color: r.color });
+      const trimMat = new THREE.MeshStandardMaterial({
+        color: 0x334155, // Dormant rune slate
+        emissive: 0x000000,
+        emissiveIntensity: 0.0,
+        roughness: 0.5,
+        metalness: 0.4
+      });
       const trim = new THREE.Mesh(trimGeo, trimMat);
       trim.position.y = 3.6;
       gateGroup.add(trim);
 
-      // Swirling Wormhole Event Horizon
+      // Swirling Wormhole Event Horizon (dormant until trial is conquered)
       const wormholeGeo = new THREE.CircleGeometry(3.2, 32);
       const wormholeMat = new THREE.MeshBasicMaterial({
         color: r.color,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.4,
+        opacity: 0.0,
+        visible: false,
         blending: THREE.AdditiveBlending
       });
       const wormhole = new THREE.Mesh(wormholeGeo, wormholeMat);
       wormhole.position.y = 3.6;
       gateGroup.add(wormhole);
+
+      // Dormant Runic Lock Seal (visual indication that stargate is dormant/sealed)
+      const sealGeo = new THREE.RingGeometry(1.2, 3.2, 6);
+      const sealMat = new THREE.MeshBasicMaterial({
+        color: 0x64748b,
+        wireframe: true,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.45
+      });
+      const seal = new THREE.Mesh(sealGeo, sealMat);
+      seal.position.y = 3.6;
+      gateGroup.add(seal);
 
       // Pedestal Base
       const baseGeo = new THREE.CylinderGeometry(4.5, 5.0, 0.8, 12);
@@ -683,6 +703,9 @@ export class AstralExpanse {
         group: gateGroup,
         wormhole,
         wormholeMat,
+        trim,
+        trimMat,
+        seal,
         config: r,
         isActive: false
       };
@@ -708,7 +731,12 @@ export class AstralExpanse {
 
       this.animatedObjects.push({
         tick: (delta) => {
-          wormhole.rotation.z += delta * 1.5;
+          const gate = this.stargates[r.key];
+          if (gate && gate.isActive) {
+            wormhole.rotation.z += delta * 1.5;
+          } else if (seal) {
+            seal.rotation.z -= delta * 0.35;
+          }
         }
       });
     });
@@ -717,9 +745,17 @@ export class AstralExpanse {
   // Activate Stargate visuals upon trial completion
   activateStargate(realmKey) {
     const gate = this.stargates[realmKey];
-    if (gate) {
+    if (gate && !gate.isActive) {
       gate.isActive = true;
+      if (gate.seal) {
+        gate.seal.visible = false;
+      }
+      gate.wormhole.visible = true;
+      gate.wormholeMat.visible = true;
       gate.wormholeMat.opacity = 0.75;
+      gate.trimMat.color.setHex(gate.config.color);
+      gate.trimMat.emissive.setHex(gate.config.color);
+      gate.trimMat.emissiveIntensity = 0.6;
       const flare = new THREE.PointLight(gate.config.color, 3.5, 18);
       flare.position.y = 3.6;
       gate.group.add(flare);
