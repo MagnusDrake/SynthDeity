@@ -392,10 +392,14 @@ class GameEngine {
     if (this.hud && this.player && this.controller) {
       this.hud.updateDivineFavor(this.player.divineFavor, this.player.maxDivineFavor);
       this.hud.updateCompass(this.controller.cameraYaw);
+      const isMantaMounted = !!this.controller.mountedManta;
+      const flightSpeed = isMantaMounted
+        ? (this.controller.inputState.sprint ? 68 : (this.controller.inputState.moveBackward ? 20 : 34))
+        : this.player.velocity.length();
       this.hud.updateFlightStatus(
-        this.player.isFlying,
+        this.player.isFlying || isMantaMounted,
         this.player.position.y,
-        this.player.velocity.length()
+        flightSpeed
       );
     }
 

@@ -181,12 +181,10 @@ export class GameController {
         this.inputState.moveRight = true;
         break;
       case 'Space':
-        if (this.mountedManta) {
-          this.dismountManta();
-          break;
-        }
         if (!this.inputState.jump) {
-          audioSystem.playAscendSound();
+          if (!this.mountedManta) {
+            audioSystem.playAscendSound();
+          }
         }
         this.inputState.jump = true;
         break;
@@ -211,6 +209,10 @@ export class GameController {
         this.openEidolonDialogue();
         break;
       case 'KeyF':
+        if (this.mountedManta) {
+          this.dismountManta();
+          break;
+        }
         const isFlying = this.player.toggleFlight();
         audioSystem.playFlightWhoosh(isFlying);
         if (this.hud) {
@@ -663,22 +665,39 @@ export class GameController {
     if (this.mountedManta) return;
     this.mountedManta = manta;
     manta.isMounted = true;
+    this.player.isMounted = true;
     this.player.isFlying = true;
+    this.player.velocity.set(0, 0, 0);
     this.cameraDistance = 24;
     audioSystem.playMantaMount();
     if (this.hud) {
-      this.hud.showNotification('🕊️ Mounted Celestial Star-Manta! [WASD: Steer | Shift: Turbo | Space: Dismount]', 'success');
+      this.hud.showNotification('🕊️ Mounted Celestial Star-Manta! [Space] Ascend • [S] Descend • [Shift] Turbo • [E] Dismount', 'success');
+      this.hud.showInteractPrompt('🕊️ Manta Flight: [WASD] Steer • [Space] Ascend • [S] Descend • [Shift] Turbo • [E] Dismount', '');
     }
   }
 
   dismountManta() {
     if (!this.mountedManta) return;
-    this.mountedManta.isMounted = false;
+    const m = this.mountedManta;
+    m.isMounted = false;
+
+    // Synchronize Manta's orbital flight parameters so it smoothly resumes its patrol from current position
+    m.angle = Math.atan2(m.mesh.position.z, m.mesh.position.x);
+    if (m.config) {
+      m.config.radius = Math.hypot(m.mesh.position.x, m.mesh.position.z);
+      m.config.altitude = m.mesh.position.y;
+    }
+
     this.mountedManta = null;
+    this.player.isMounted = false;
+    this.player.isFlying = true;
+    this.player.position.y += 1.8;
+    this.player.velocity.set(0, 3, 0);
     this.cameraDistance = 10;
     audioSystem.playHoverStep();
     if (this.hud) {
-      this.hud.showNotification('Dismounted from Celestial Star-Manta into free flight!', 'info');
+      this.hud.showNotification('Dismounted from Celestial Star-Manta into free flight! [F: Land]', 'info');
+      this.hud.hideInteractPrompt();
     }
   }
 
@@ -977,29 +996,47 @@ export class GameController {
     // 0. Update Mounted Manta Flight Physics
     if (this.mountedManta) {
       const m = this.mountedManta;
-      const speed = this.inputState.sprint ? 68 : 32;
+      const speed = this.inputState.sprint ? 68 : (this.inputState.moveBackward ? 20 : 34);
 
-      // Aerial Steering
+      // Aerial Steering (Yaw & Bank)
       if (this.inputState.moveLeft) m.mesh.rotation.y += delta * 1.8;
       if (this.inputState.moveRight) m.mesh.rotation.y -= delta * 1.8;
 
       // Ascend / Descend
-      if (this.inputState.jump) m.mesh.position.y += delta * 24;
-      if (this.inputState.moveBackward && !this.inputState.jump) m.mesh.position.y -= delta * 14;
+      if (this.inputState.jump) {
+        m.mesh.position.y += delta * 24;
+      }
+      if (this.inputState.moveBackward && !this.inputState.jump) {
+        m.mesh.position.y -= delta * 16;
+      }
 
-      // Move forward in current heading
+      // Safe altitude bounds (12m to 350m)
+      m.mesh.position.y = Math.max(12, Math.min(350, m.mesh.position.y));
+
+      // Move forward along current heading
       const heading = m.mesh.rotation.y;
       m.mesh.position.x -= Math.sin(heading) * speed * delta;
       m.mesh.position.z -= Math.cos(heading) * speed * delta;
 
       // Aerodynamic Wing Flap
-      const flapSpeed = this.inputState.sprint ? 9 : 4.5;
+      const flapSpeed = this.inputState.sprint ? 9 : (this.inputState.moveBackward ? 3.5 : 4.5);
       const flap = Math.sin(this.elapsedTime * flapSpeed) * 0.45;
       if (m.leftWing) m.leftWing.rotation.z = flap;
       if (m.rightWing) m.rightWing.rotation.z = -flap;
 
-      // Snap player avatar to dorsal harness
-      this.player.position.copy(m.mesh.position).add(new THREE.Vector3(0, 1.8, 0));
+      // Pitch & Roll the manta based on steering and altitude change
+      const targetRoll = (this.inputState.moveLeft ? 0.35 : 0) - (this.inputState.moveRight ? 0.35 : 0);
+      const targetPitch = (this.inputState.jump ? 0.28 : 0) - (this.inputState.moveBackward ? 0.22 : 0);
+      m.mesh.rotation.z = THREE.MathUtils.lerp(m.mesh.rotation.z, targetRoll, delta * 4);
+      m.mesh.rotation.x = THREE.MathUtils.lerp(m.mesh.rotation.x, targetPitch, delta * 4);
+
+      // Snap player avatar to dorsal harness with matched pitch and roll tilt
+      this.player.position.set(m.mesh.position.x, m.mesh.position.y + 1.2, m.mesh.position.z);
+      this.player.targetRotationY = heading;
+      this.player.rotation.y = heading;
+      this.player.mesh.rotation.y = heading;
+      this.player.mesh.rotation.x = m.mesh.rotation.x * 0.6;
+      this.player.mesh.rotation.z = m.mesh.rotation.z * 0.6;
       this.player.velocity.set(0, 0, 0);
       this.cameraYaw = heading;
     }
@@ -1143,6 +1180,25 @@ export class GameController {
   checkProximity() {
     if (this.hud && this.hud.isModalOpen) return;
 
+    // 0. If mounted on Manta, display persistent flight controls
+    if (this.mountedManta) {
+      if (this.hud) {
+        this.hud.showInteractPrompt('🕊️ Manta Flight: [WASD] Steer • [Space] Ascend • [S] Descend • [Shift] Turbo • [E] Dismount', '');
+      }
+      return;
+    }
+
+    // 1. If unmounted and near a roaming Celestial Star-Manta, show Mount prompt
+    if (this.expanse && this.expanse.getNearestManta) {
+      const nearManta = this.expanse.getNearestManta(this.player.position, 18);
+      if (nearManta) {
+        if (this.hud) {
+          this.hud.showInteractPrompt('Mount Celestial Star-Manta', 'E');
+        }
+        return;
+      }
+    }
+
     let nearest = null;
     let minDist = Infinity;
 
@@ -1165,20 +1221,20 @@ export class GameController {
     if (this.hud) {
       if (nearest) {
         if (nearest.data && nearest.data.isAstralObelisk) {
-          this.hud.showInteractPrompt(`[E] Commune & Sacred Lore | [Y] Converse [AI]`);
+          this.hud.showInteractPrompt('Commune & Sacred Lore [E] | Converse [Y]', '');
         } else if (nearest.data && nearest.data.isStargate) {
           const isConquered = this.clearedTrials.has(nearest.data.realmKey);
           if (isConquered) {
-            this.hud.showInteractPrompt(`[E] Enter Dimensional Stargate: ${nearest.data.gateName}`);
+            this.hud.showInteractPrompt(`Enter Dimensional Stargate: ${nearest.data.gateName}`, 'E');
           } else {
             const realm = ARCHON_REALMS[nearest.data.realmKey];
             const trialName = realm ? realm.trial.name : 'Archon Trial';
-            this.hud.showInteractPrompt(`🔒 Stargate Sealed — Requires ${trialName}`);
+            this.hud.showInteractPrompt(`🔒 Stargate Sealed — Requires ${trialName}`, '');
           }
         } else if (nearest.data && nearest.data.isReturnGate) {
-          this.hud.showInteractPrompt(`[E] Traverse Return Gate to Main Galaxy`);
+          this.hud.showInteractPrompt('Traverse Return Gate to Main Galaxy', 'E');
         } else {
-          this.hud.showInteractPrompt(`[E] Attune with ${nearest.name}`);
+          this.hud.showInteractPrompt(`Attune with ${nearest.name}`, 'E');
         }
       } else {
         this.hud.hideInteractPrompt();

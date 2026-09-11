@@ -24,6 +24,7 @@ export class CelestialPlayer {
     this.flightRoll = 0;
     this.divineFavor = 100;
     this.maxDivineFavor = 100;
+    this.isMounted = false;
     this.expanse = null;
 
     // Components to animate
@@ -376,8 +377,16 @@ export class CelestialPlayer {
 
     const isSprinting = inputState.sprint && this.divineFavor > 10;
 
-    // 2. Divine Flight Mode vs Ground Locomotion
-    if (this.isFlying) {
+    // When riding a celestial mount (Star-Manta), position & orientation are locked to the mount's saddle
+    if (this.isMounted) {
+      this.velocity.set(0, 0, 0);
+      if (this.windLines) {
+        this.windLines.material.opacity = isSprinting ? 0.8 : 0.35;
+        this.windLines.position.copy(this.position);
+        this.windLines.rotation.y = this.rotation.y;
+      }
+      this.hoverBob += delta * (isSprinting ? 8 : 4);
+    } else if (this.isFlying) {
       const flightSpeed = isSprinting ? this.flightSpeed * this.flightSprintMultiplier : this.flightSpeed;
       if (isSprinting && (inputState.moveForward || inputState.moveBackward || inputState.moveLeft || inputState.moveRight)) {
         this.divineFavor = Math.max(0, this.divineFavor - delta * 12);

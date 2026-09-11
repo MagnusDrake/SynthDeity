@@ -403,6 +403,10 @@ export class CelestialHUD {
                   <span class="text-amber-300 font-bold block">B</span>
                   Chronostasis (Slow-Mo)
                 </div>
+                <div class="p-2 bg-slate-900/60 rounded border border-cyan-500/40 col-span-2">
+                  <span class="text-cyan-300 font-bold block">🕊️ Celestial Star-Manta Controls</span>
+                  [E] Mount / Dismount • [WASD] Steer • [Space] Ascend • [S] Descend • [Shift] Turbo Boost
+                </div>
               </div>
               <p class="text-xs text-amber-300/70 italic text-center">
                 Touchscreens: Use the on-screen joystick and celestial action buttons.
@@ -741,11 +745,20 @@ export class CelestialHUD {
     }
   }
 
-  showInteractPrompt(text) {
+  showInteractPrompt(text, key = 'E') {
     const prompt = this.container.querySelector('#interact-prompt');
     const label = this.container.querySelector('#prompt-text');
+    const keyEl = this.container.querySelector('.prompt-key');
     if (prompt && label) {
       label.textContent = text;
+      if (keyEl) {
+        if (!key) {
+          keyEl.classList.add('hidden');
+        } else {
+          keyEl.textContent = key;
+          keyEl.classList.remove('hidden');
+        }
+      }
       prompt.classList.remove('hidden');
     }
   }
