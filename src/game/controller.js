@@ -195,8 +195,10 @@ export class GameController {
         this.inputState.sprint = true;
         if (this.mountedManta) {
           audioSystem.playMantaBoost();
-          this.vfx.triggerDivineSmite(this.player.position);
-          this.addCameraShake(0.3);
+          if (this.vfx && this.vfx.triggerMantaBoost) {
+            this.vfx.triggerMantaBoost(this.mountedManta.mesh.position, this.mountedManta.mesh.rotation.y);
+          }
+          this.addCameraShake(0.2);
         }
         break;
       case 'KeyE':
@@ -975,7 +977,7 @@ export class GameController {
     // 0. Update Mounted Manta Flight Physics
     if (this.mountedManta) {
       const m = this.mountedManta;
-      const speed = this.inputState.sprint ? 58 : 32;
+      const speed = this.inputState.sprint ? 68 : 32;
 
       // Aerial Steering
       if (this.inputState.moveLeft) m.mesh.rotation.y += delta * 1.8;
@@ -983,7 +985,7 @@ export class GameController {
 
       // Ascend / Descend
       if (this.inputState.jump) m.mesh.position.y += delta * 24;
-      if (this.inputState.sprint && !this.inputState.jump) m.mesh.position.y -= delta * 6;
+      if (this.inputState.moveBackward && !this.inputState.jump) m.mesh.position.y -= delta * 14;
 
       // Move forward in current heading
       const heading = m.mesh.rotation.y;
@@ -991,7 +993,7 @@ export class GameController {
       m.mesh.position.z -= Math.cos(heading) * speed * delta;
 
       // Aerodynamic Wing Flap
-      const flapSpeed = this.inputState.sprint ? 8 : 4;
+      const flapSpeed = this.inputState.sprint ? 9 : 4.5;
       const flap = Math.sin(this.elapsedTime * flapSpeed) * 0.45;
       if (m.leftWing) m.leftWing.rotation.z = flap;
       if (m.rightWing) m.rightWing.rotation.z = -flap;
@@ -1014,13 +1016,13 @@ export class GameController {
     // 2. Update player physics, flight, and animations
     this.player.update(delta, this.inputState);
 
-    // Subtle micro-shake on supersonic flight dive
-    if (this.player.isFlying && this.inputState.sprint) {
+    // Subtle micro-shake on supersonic flight dive or manta turbo
+    if ((this.player.isFlying || this.mountedManta) && this.inputState.sprint) {
       this.addCameraShake(0.04 * delta);
     }
 
-    // 3. Dynamic Camera FOV (warp speed effect during flight)
-    const isFlightBoosting = this.player.isFlying && (this.inputState.moveForward || this.inputState.jump);
+    // 3. Dynamic Camera FOV (warp speed effect during flight / manta turbo)
+    const isFlightBoosting = (this.player.isFlying || this.mountedManta) && (this.inputState.moveForward || this.inputState.jump || this.inputState.sprint || this.mountedManta);
     const targetFOV = isFlightBoosting ? (this.inputState.sprint ? 76 : 68) : 60;
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFOV, Math.min(1, delta * 4));
     this.camera.updateProjectionMatrix();

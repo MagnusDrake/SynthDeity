@@ -515,6 +515,88 @@ export class CelestialVFX {
     this.activeEffects.push(fx);
   }
 
+  // Celestial Manta Sonic Turbo Boost Wake & Slipstream Rings
+  triggerMantaBoost(pos, heading) {
+    if (!pos) return;
+    // Vector pointing directly behind the manta
+    const backX = Math.sin(heading);
+    const backZ = Math.cos(heading);
+    const origin = new THREE.Vector3(pos.x + backX * 4.5, pos.y, pos.z + backZ * 4.5);
+
+    // Expanding aerodynamic sonic-boom condensation ring
+    const ringGeo = new THREE.RingGeometry(2.0, 3.4, 24);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.position.copy(origin);
+    ring.rotation.y = heading + Math.PI / 2;
+    this.scene.add(ring);
+
+    // Backward starlight slipstream particle wake
+    const pCount = 35;
+    const pGeo = new THREE.BufferGeometry();
+    const pArr = new Float32Array(pCount * 3);
+    const pVels = [];
+    for (let i = 0; i < pCount; i++) {
+      pArr[i * 3] = origin.x + (Math.random() - 0.5) * 4;
+      pArr[i * 3 + 1] = origin.y + (Math.random() - 0.5) * 2;
+      pArr[i * 3 + 2] = origin.z + (Math.random() - 0.5) * 4;
+      const speed = 20 + Math.random() * 18;
+      pVels.push(new THREE.Vector3(
+        backX * speed + (Math.random() - 0.5) * 4,
+        (Math.random() - 0.5) * 3,
+        backZ * speed + (Math.random() - 0.5) * 4
+      ));
+    }
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pArr, 3));
+    const pMat = new THREE.PointsMaterial({
+      color: 0x7dd3fc,
+      size: 0.65,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const particles = new THREE.Points(pGeo, pMat);
+    this.scene.add(particles);
+
+    const fx = {
+      age: 0,
+      maxAge: 0.6,
+      update: (delta) => {
+        // Expand and fade ring
+        const s = 1 + fx.age * 18;
+        ring.scale.set(s, s, s);
+        ringMat.opacity = Math.max(0, 0.85 * (1 - fx.age / 0.55));
+
+        // Move wake particles backward
+        const arr = pGeo.attributes.position.array;
+        for (let i = 0; i < pCount; i++) {
+          arr[i * 3] += pVels[i].x * delta;
+          arr[i * 3 + 1] += pVels[i].y * delta;
+          arr[i * 3 + 2] += pVels[i].z * delta;
+        }
+        pGeo.attributes.position.needsUpdate = true;
+        pMat.opacity = Math.max(0, 0.9 * (1 - fx.age / 0.6));
+      },
+      cleanup: () => {
+        this.scene.remove(ring);
+        this.scene.remove(particles);
+        ringGeo.dispose();
+        ringMat.dispose();
+        pGeo.dispose();
+        pMat.dispose();
+      }
+    };
+    this.activeEffects.push(fx);
+  }
+
   // 4. Singularity Vortex: Miniature rotating black hole with accretion ring
   triggerSingularityVortex(targetPos) {
     const groundY = (targetPos && typeof targetPos.y === 'number') ? targetPos.y : 0;
